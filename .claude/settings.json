@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./config/credentials.json)",
+      "Read(./android/key.properties)",
+      "Read(./ios/Runner/GoogleService-Info.plist)",
+      "Read(./build/**)",
+      "Read(./.dart_tool/**)"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(/c/Python314/python *)",
+      "Bash(echo \"Done: $?\")",
+      "Bash(cat)",
+      "Bash(echo \"list_card: $?\")",
+      "Bash(flutter analyze *)"
+    ]
+  }
+}
