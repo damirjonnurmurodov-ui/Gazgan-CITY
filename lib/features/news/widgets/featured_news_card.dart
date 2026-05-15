@@ -23,9 +23,7 @@ class FeaturedNewsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.borderGray.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.7)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: AppColors.shadow,
@@ -48,7 +46,10 @@ class FeaturedNewsCard extends StatelessWidget {
                 _FeaturedImage(color: item.imageColor, icon: item.icon),
                 const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.goldAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -59,7 +60,11 @@ class FeaturedNewsCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(LucideIcons.star, size: 12, color: AppColors.goldAccent),
+                      const Icon(
+                        LucideIcons.star,
+                        size: 12,
+                        color: AppColors.goldAccent,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         'Asosiy xabar',
@@ -91,15 +96,34 @@ class FeaturedNewsCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: <Widget>[
-                    const Icon(LucideIcons.calendar, size: 13, color: AppColors.mutedText),
+                    const Icon(
+                      LucideIcons.calendar,
+                      size: 13,
+                      color: AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        item.date,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Icon(
+                      LucideIcons.eye,
+                      size: 13,
+                      color: AppColors.mutedText,
+                    ),
                     const SizedBox(width: 5),
                     Text(
-                      item.date,
+                      '${item.viewsCount}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption,
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 10),
                     TextButton.icon(
                       onPressed: onDetailsTap,
                       icon: const Icon(LucideIcons.arrowRight, size: 16),
@@ -107,7 +131,10 @@ class FeaturedNewsCard extends StatelessWidget {
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primaryBlue,
                         textStyle: AppTextStyles.button.copyWith(fontSize: 14),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -136,9 +163,7 @@ class _FeaturedImage extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 160,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-        ),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.15)),
         child: Stack(
           children: <Widget>[
             Center(

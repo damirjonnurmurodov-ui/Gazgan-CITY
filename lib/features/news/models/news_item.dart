@@ -12,6 +12,8 @@ class NewsItem {
     required this.category,
     required this.icon,
     required this.imageColor,
+    this.content = '',
+    this.viewsCount = 0,
     this.isFeatured = false,
     this.isOfficial = false,
   });
@@ -19,10 +21,12 @@ class NewsItem {
   final String id;
   final String title;
   final String description;
+  final String content;
   final String date;
   final String category;
   final IconData icon;
   final Color imageColor;
+  final int viewsCount;
   final bool isFeatured;
   final bool isOfficial;
 
@@ -41,10 +45,10 @@ class NewsItem {
       ], fallback: 'Yangilik'),
       description: readString(json, const <String>[
         'description',
-        'content',
         'body',
         'summary',
       ], fallback: 'G\'ozg\'on shahri bo\'yicha yangilik.'),
+      content: readString(json, const <String>['content', 'body']),
       date: readString(json, const <String>[
         'date',
         'published_at',
@@ -57,6 +61,7 @@ class NewsItem {
         'image_color',
         'accent_color',
       ], fallback: _colorForCategory(category)),
+      viewsCount: _readInt(json, const <String>['views_count', 'views']),
       isFeatured: readBool(json, const <String>['is_featured', 'featured']),
       isOfficial: readBool(json, const <String>[
         'is_official',
@@ -64,6 +69,19 @@ class NewsItem {
       ], fallback: category.toLowerCase().contains('rasmiy')),
     );
   }
+}
+
+int _readInt(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+  }
+  return 0;
 }
 
 IconData _iconForCategory(String category) {

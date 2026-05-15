@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/data/repository_result.dart';
@@ -125,8 +126,8 @@ class _NewsScreenState extends State<NewsScreen> {
                 const SizedBox(height: 18),
                 FeaturedNewsCard(
                   item: featuredNews,
-                  onTap: () => debugPrint('Featured: ${featuredNews.id}'),
-                  onDetailsTap: () => debugPrint('Details: ${featuredNews.id}'),
+                  onTap: () => _openNews(context, featuredNews),
+                  onDetailsTap: () => _openNews(context, featuredNews),
                 ),
               ],
               const SizedBox(height: 20),
@@ -143,7 +144,7 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                   child: NewsListCard(
                     item: item,
-                    onTap: () => debugPrint('News: ${item.id}'),
+                    onTap: () => _openNews(context, item),
                   ),
                 );
               }),
@@ -152,6 +153,10 @@ class _NewsScreenState extends State<NewsScreen> {
         );
       },
     );
+  }
+
+  void _openNews(BuildContext context, NewsItem item) {
+    context.push('/news-detail/${item.id}', extra: item);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/data/repository_result.dart';
@@ -8,6 +9,10 @@ import '../../core/widgets/app_search_field.dart';
 import '../../core/widgets/category_chip.dart';
 import '../../core/widgets/data_status_banner.dart';
 import '../../core/widgets/section_header.dart';
+import '../auth/data/auth_repository.dart';
+import '../auth/models/auth_user.dart';
+import '../saved/data/saved_items_repository.dart';
+import '../saved/models/saved_item.dart';
 import 'data/map_places_repository.dart';
 import 'models/map_place.dart';
 import 'widgets/mock_map_widget.dart';
@@ -15,9 +20,16 @@ import 'widgets/quick_place_card.dart';
 import 'widgets/selected_place_card.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key, this.repository});
+  const MapScreen({
+    super.key,
+    this.repository,
+    this.authRepository,
+    this.savedRepository,
+  });
 
   final MapPlacesRepository? repository;
+  final AuthRepository? authRepository;
+  final SavedItemsRepository? savedRepository;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -26,7 +38,11 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   String? _selectedPlaceId;
   String _selectedCategory = 'Barchasi';
+  final Map<String, bool> _savedOverrides = <String, bool>{};
+  late final AuthRepository _authRepository;
+  late final SavedItemsRepository _savedRepository;
   late final Future<RepositoryResult<List<MapPlace>>> _placesFuture;
+  late final Future<Set<String>> _savedMapPlaceIdsFuture;
 
   static const List<String> _categories = <String>[
     'Barchasi',
@@ -80,8 +96,17 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    _authRepository = widget.authRepository ?? SupabaseAuthRepository();
+    _savedRepository = widget.savedRepository ?? SavedItemsRepository();
     _placesFuture = (widget.repository ?? MapPlacesRepository())
         .fetchPlacesResult();
+    final user = _currentUserOrNull(_authRepository);
+    _savedMapPlaceIdsFuture = user == null
+        ? Future<Set<String>>.value(<String>{})
+        : _savedRepository.fetchSavedItemIds(
+            userId: user.id,
+            type: SavedItemType.mapPlace,
+          );
   }
 
   List<MapPlace> _filteredPlaces(List<MapPlace> places) {
@@ -141,83 +166,136 @@ class _MapScreenState extends State<MapScreen> {
     return places.isEmpty ? null : places.first.id;
   }
 
+  Future<void> _toggleSavedPlace(String id, bool isSaved) async {
+    final user = _currentUserOrNull(_authRepository);
+    if (user == null) {
+      final redirect = Uri.encodeComponent('/map');
+      context.push('/login?redirect=$redirect');
+      return;
+    }
+
+    final next = !isSaved;
+    setState(() => _savedOverrides[id] = next);
+
+    try {
+      await _savedRepository.setSaved(
+        userId: user.id,
+        type: SavedItemType.mapPlace,
+        itemId: id,
+        isSaved: next,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _savedOverrides.remove(id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saqlash holatini yangilab bo\'lmadi.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<RepositoryResult<List<MapPlace>>>(
-      future: _placesFuture,
-      initialData: const RepositoryResult.fallback(
-        MapPlacesRepository.fallbackPlaces,
-        message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
-      ),
-      builder: (context, snapshot) {
-        final result =
-            snapshot.data ??
-            const RepositoryResult.fallback(
-              MapPlacesRepository.fallbackPlaces,
-              message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
-            );
-        final places = result.data;
-        final filteredPlaces = _filteredPlaces(places);
-        final selectedPlace = _selectedPlace(places);
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+    return FutureBuilder<Set<String>>(
+      future: _savedMapPlaceIdsFuture,
+      initialData: const <String>{},
+      builder: (context, savedSnapshot) {
+        final savedIds = savedSnapshot.data ?? const <String>{};
 
-        return SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
-            children: <Widget>[
-              Text(
-                'Xarita',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.screenTitle,
-              ),
-              if (isLoading) ...[
-                const SizedBox(height: 10),
-                const LinearProgressIndicator(minHeight: 2),
-              ] else if (result.isFallback) ...[
-                const SizedBox(height: 10),
-                DataStatusBanner(message: result.message!),
-              ],
-              const SizedBox(height: 14),
-              const AppSearchField(hintText: 'Xaritadan qidirish...'),
-              const SizedBox(height: 12),
-              _CategoryChipRow(
-                categories: _categories,
-                selectedCategory: _selectedCategory,
-                onCategorySelected: _onCategorySelected,
-              ),
-              const SizedBox(height: 16),
-              MockMapWidget(
-                places: filteredPlaces,
-                selectedPlaceId: _selectedPlaceId,
-                onPlaceSelected: _onPlaceSelected,
-              ),
-              if (selectedPlace != null) ...[
-                const SizedBox(height: 16),
-                SelectedPlaceCard(
-                  place: selectedPlace,
-                  onClose: () {
-                    setState(() {
-                      _selectedPlaceId = null;
-                    });
-                  },
-                  onDirections: () {
-                    debugPrint('Directions to: ${selectedPlace.name}');
-                  },
-                ),
-              ],
-              const SizedBox(height: 20),
-              const SectionHeader(title: 'Tezkor joylar'),
-              const SizedBox(height: 12),
-              QuickPlaceGrid(
-                items: _quickPlaces,
-                onItemTap: (id) => _onQuickPlaceTap(id, places),
-              ),
-            ],
+        return FutureBuilder<RepositoryResult<List<MapPlace>>>(
+          future: _placesFuture,
+          initialData: const RepositoryResult.fallback(
+            MapPlacesRepository.fallbackPlaces,
+            message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
           ),
+          builder: (context, snapshot) {
+            final result =
+                snapshot.data ??
+                const RepositoryResult.fallback(
+                  MapPlacesRepository.fallbackPlaces,
+                  message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
+                );
+            final places = result.data;
+            final filteredPlaces = _filteredPlaces(places);
+            final selectedPlace = _selectedPlace(places);
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+
+            return SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
+                children: <Widget>[
+                  Text(
+                    'Xarita',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.screenTitle,
+                  ),
+                  if (isLoading) ...[
+                    const SizedBox(height: 10),
+                    const LinearProgressIndicator(minHeight: 2),
+                  ] else if (result.isFallback) ...[
+                    const SizedBox(height: 10),
+                    DataStatusBanner(message: result.message!),
+                  ],
+                  const SizedBox(height: 14),
+                  const AppSearchField(hintText: 'Xaritadan qidirish...'),
+                  const SizedBox(height: 12),
+                  _CategoryChipRow(
+                    categories: _categories,
+                    selectedCategory: _selectedCategory,
+                    onCategorySelected: _onCategorySelected,
+                  ),
+                  const SizedBox(height: 16),
+                  MockMapWidget(
+                    places: filteredPlaces,
+                    selectedPlaceId: _selectedPlaceId,
+                    onPlaceSelected: _onPlaceSelected,
+                  ),
+                  if (selectedPlace != null) ...[
+                    const SizedBox(height: 16),
+                    SelectedPlaceCard(
+                      place: selectedPlace,
+                      isSaved:
+                          _savedOverrides[selectedPlace.id] ??
+                          savedIds.contains(selectedPlace.id),
+                      onClose: () {
+                        setState(() {
+                          _selectedPlaceId = null;
+                        });
+                      },
+                      onDirections: () {
+                        debugPrint('Directions to: ${selectedPlace.name}');
+                      },
+                      onSave: () {
+                        final isSaved =
+                            _savedOverrides[selectedPlace.id] ??
+                            savedIds.contains(selectedPlace.id);
+                        _toggleSavedPlace(selectedPlace.id, isSaved);
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  const SectionHeader(title: 'Tezkor joylar'),
+                  const SizedBox(height: 12),
+                  QuickPlaceGrid(
+                    items: _quickPlaces,
+                    onItemTap: (id) => _onQuickPlaceTap(id, places),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
+  }
+}
+
+AuthUser? _currentUserOrNull(AuthRepository repository) {
+  try {
+    return repository.currentUser;
+  } catch (_) {
+    return null;
   }
 }
 

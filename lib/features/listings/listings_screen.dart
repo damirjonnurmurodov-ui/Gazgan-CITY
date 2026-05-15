@@ -11,16 +11,25 @@ import '../../core/widgets/category_chip.dart';
 import '../../core/widgets/data_status_banner.dart';
 import '../../core/widgets/section_header.dart';
 import '../auth/data/auth_repository.dart';
+import '../auth/models/auth_user.dart';
+import '../saved/data/saved_items_repository.dart';
+import '../saved/models/saved_item.dart';
 import 'data/listings_repository.dart';
 import 'models/listing_item.dart';
 import 'widgets/listing_card.dart';
 import 'widgets/safety_banner.dart';
 
 class ListingsScreen extends StatefulWidget {
-  const ListingsScreen({super.key, this.repository, this.authRepository});
+  const ListingsScreen({
+    super.key,
+    this.repository,
+    this.authRepository,
+    this.savedRepository,
+  });
 
   final ListingsRepository? repository;
   final AuthRepository? authRepository;
+  final SavedItemsRepository? savedRepository;
 
   @override
   State<ListingsScreen> createState() => _ListingsScreenState();
@@ -28,22 +37,32 @@ class ListingsScreen extends StatefulWidget {
 
 class _ListingsScreenState extends State<ListingsScreen> {
   final _searchController = TextEditingController();
-  final Set<String> _favoriteIds = <String>{};
+  final Map<String, bool> _favoriteOverrides = <String, bool>{};
   String _selectedCategory = 'Barchasi';
   String _query = '';
 
   late final ListingsRepository _repository;
   late final AuthRepository _authRepository;
+  late final SavedItemsRepository _savedRepository;
   late final Future<RepositoryResult<List<ListingItem>>> _listingsFuture;
   late final Future<RepositoryResult<List<ListingCategory>>> _categoriesFuture;
+  late final Future<Set<String>> _savedListingIdsFuture;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? ListingsRepository();
     _authRepository = widget.authRepository ?? SupabaseAuthRepository();
+    _savedRepository = widget.savedRepository ?? SavedItemsRepository();
     _listingsFuture = _repository.fetchListingsResult();
     _categoriesFuture = _repository.fetchCategoriesResult();
+    final user = _currentUserOrNull(_authRepository);
+    _savedListingIdsFuture = user == null
+        ? Future<Set<String>>.value(<String>{})
+        : _savedRepository.fetchSavedItemIds(
+            userId: user.id,
+            type: SavedItemType.listing,
+          );
   }
 
   @override
@@ -60,18 +79,35 @@ class _ListingsScreenState extends State<ListingsScreen> {
     }).toList();
   }
 
-  void _toggleFavorite(String id) {
-    setState(() {
-      if (_favoriteIds.contains(id)) {
-        _favoriteIds.remove(id);
-      } else {
-        _favoriteIds.add(id);
-      }
-    });
+  Future<void> _toggleFavorite(String id, bool isFavorite) async {
+    final user = _currentUserOrNull(_authRepository);
+    if (user == null) {
+      final redirect = Uri.encodeComponent('/listings');
+      context.push('/login?redirect=$redirect');
+      return;
+    }
+
+    final next = !isFavorite;
+    setState(() => _favoriteOverrides[id] = next);
+
+    try {
+      await _savedRepository.setSaved(
+        userId: user.id,
+        type: SavedItemType.listing,
+        itemId: id,
+        isSaved: next,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _favoriteOverrides.remove(id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saqlash holatini yangilab bo\'lmadi.')),
+      );
+    }
   }
 
   void _openCreateListing() {
-    if (_authRepository.currentUser == null) {
+    if (_currentUserOrNull(_authRepository) == null) {
       final redirect = Uri.encodeComponent('/create-listing');
       context.push('/login?redirect=$redirect');
       return;
@@ -92,93 +128,114 @@ class _ListingsScreenState extends State<ListingsScreen> {
             categoriesSnapshot.data?.data ??
             ListingsRepository.fallbackCategories;
 
-        return FutureBuilder<RepositoryResult<List<ListingItem>>>(
-          future: _listingsFuture,
-          builder: (context, snapshot) {
-            final result = snapshot.data;
-            final isLoading =
-                snapshot.connectionState == ConnectionState.waiting &&
-                result == null;
-            final listings = _filteredListings(
-              result?.data ?? const <ListingItem>[],
-            );
+        return FutureBuilder<Set<String>>(
+          future: _savedListingIdsFuture,
+          initialData: const <String>{},
+          builder: (context, savedSnapshot) {
+            final savedIds = savedSnapshot.data ?? const <String>{};
 
-            return SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
-                children: <Widget>[
-                  _ListingsHeader(onCreateTap: _openCreateListing),
-                  const SizedBox(height: 14),
-                  AppSearchField(
-                    controller: _searchController,
-                    hintText: 'E\'lonlardan qidirish...',
-                    onChanged: (value) => setState(() => _query = value),
-                  ),
-                  const SizedBox(height: 12),
-                  _CategoryList(
-                    categories: categories,
-                    selectedCategory: _selectedCategory,
-                    onSelected: (category) {
-                      setState(() => _selectedCategory = category);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const SafetyBanner(),
-                  if (isLoading) ...<Widget>[
-                    const SizedBox(height: 18),
-                    const AppStateCard(
-                      title: 'E\'lonlar yuklanmoqda',
-                      message: 'Mahalliy e\'lonlar ro\'yxati tayyorlanmoqda.',
-                      icon: LucideIcons.loader,
-                      isLoading: true,
-                    ),
-                  ] else ...<Widget>[
-                    if (result != null && result.isFallback) ...<Widget>[
-                      const SizedBox(height: 10),
-                      DataStatusBanner(message: result.message!),
+            return FutureBuilder<RepositoryResult<List<ListingItem>>>(
+              future: _listingsFuture,
+              builder: (context, snapshot) {
+                final result = snapshot.data;
+                final isLoading =
+                    snapshot.connectionState == ConnectionState.waiting &&
+                    result == null;
+                final listings = _filteredListings(
+                  result?.data ?? const <ListingItem>[],
+                );
+
+                return SafeArea(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
+                    children: <Widget>[
+                      _ListingsHeader(onCreateTap: _openCreateListing),
+                      const SizedBox(height: 14),
+                      AppSearchField(
+                        controller: _searchController,
+                        hintText: 'E\'lonlardan qidirish...',
+                        onChanged: (value) => setState(() => _query = value),
+                      ),
+                      const SizedBox(height: 12),
+                      _CategoryList(
+                        categories: categories,
+                        selectedCategory: _selectedCategory,
+                        onSelected: (category) {
+                          setState(() => _selectedCategory = category);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      const SafetyBanner(),
+                      if (isLoading) ...<Widget>[
+                        const SizedBox(height: 18),
+                        const AppStateCard(
+                          title: 'E\'lonlar yuklanmoqda',
+                          message:
+                              'Mahalliy e\'lonlar ro\'yxati tayyorlanmoqda.',
+                          icon: LucideIcons.loader,
+                          isLoading: true,
+                        ),
+                      ] else ...<Widget>[
+                        if (result != null && result.isFallback) ...<Widget>[
+                          const SizedBox(height: 10),
+                          DataStatusBanner(message: result.message!),
+                        ],
+                        const SizedBox(height: 18),
+                        SectionHeader(
+                          title: 'So\'nggi e\'lonlar',
+                          actionLabel: 'Yangisini qo\'shish',
+                          onActionTap: _openCreateListing,
+                        ),
+                        const SizedBox(height: 12),
+                        if (listings.isEmpty)
+                          AppStateCard(
+                            title: 'E\'lonlar topilmadi',
+                            message:
+                                'Tanlangan kategoriya yoki qidiruv bo\'yicha e\'lon yo\'q.',
+                            icon: LucideIcons.searchX,
+                            actionLabel: 'Yangi e\'lon qo\'shish',
+                            onActionTap: _openCreateListing,
+                          )
+                        else
+                          ...List<Widget>.generate(listings.length, (index) {
+                            final listing = listings[index];
+                            final isFavorite =
+                                _favoriteOverrides[listing.id] ??
+                                savedIds.contains(listing.id);
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index < listings.length - 1 ? 12 : 0,
+                              ),
+                              child: ListingCard(
+                                item: listing,
+                                isFavorite: isFavorite,
+                                onTap: () => context.push(
+                                  '/listing-detail/${listing.id}',
+                                  extra: listing,
+                                ),
+                                onFavoriteTap: () =>
+                                    _toggleFavorite(listing.id, isFavorite),
+                              ),
+                            );
+                          }),
+                      ],
                     ],
-                    const SizedBox(height: 18),
-                    SectionHeader(
-                      title: 'So\'nggi e\'lonlar',
-                      actionLabel: 'Yangisini qo\'shish',
-                      onActionTap: _openCreateListing,
-                    ),
-                    const SizedBox(height: 12),
-                    if (listings.isEmpty)
-                      AppStateCard(
-                        title: 'E\'lonlar topilmadi',
-                        message:
-                            'Tanlangan kategoriya yoki qidiruv bo\'yicha e\'lon yo\'q.',
-                        icon: LucideIcons.searchX,
-                        actionLabel: 'Yangi e\'lon qo\'shish',
-                        onActionTap: _openCreateListing,
-                      )
-                    else
-                      ...List<Widget>.generate(listings.length, (index) {
-                        final listing = listings[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index < listings.length - 1 ? 12 : 0,
-                          ),
-                          child: ListingCard(
-                            item: listing,
-                            isFavorite: _favoriteIds.contains(listing.id),
-                            onTap: () => context.push(
-                              '/listing-detail/${listing.id}',
-                              extra: listing,
-                            ),
-                            onFavoriteTap: () => _toggleFavorite(listing.id),
-                          ),
-                        );
-                      }),
-                  ],
-                ],
-              ),
+                  ),
+                );
+              },
             );
           },
         );
       },
     );
+  }
+}
+
+AuthUser? _currentUserOrNull(AuthRepository repository) {
+  try {
+    return repository.currentUser;
+  } catch (_) {
+    return null;
   }
 }
 

@@ -11,8 +11,11 @@ import '../../features/listings/listings_screen.dart';
 import '../../features/listings/models/listing_item.dart';
 import '../../features/listings/my_listings_screen.dart';
 import '../../features/map/map_screen.dart';
+import '../../features/news/models/news_item.dart';
+import '../../features/news/news_detail_screen.dart';
 import '../../features/news/news_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/saved/saved_items_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/simple_info_screen.dart';
@@ -64,11 +67,18 @@ class AppRouter {
       GoRoute(
         path: '/saved',
         name: 'saved',
-        builder: (context, state) => const SimpleInfoScreen(
-          title: 'Saqlanganlar',
-          message: 'Saqlangan e\'lonlar, joylar va yangiliklar shu yerda.',
-          icon: LucideIcons.bookmark,
-        ),
+        builder: (context, state) => const SavedItemsScreen(),
+      ),
+      GoRoute(
+        path: '/news-detail/:id',
+        name: 'news-detail',
+        builder: (context, state) {
+          final extra = state.extra;
+          return NewsDetailScreen(
+            newsId: state.pathParameters['id'] ?? '',
+            initialItem: extra is NewsItem ? extra : null,
+          );
+        },
       ),
       GoRoute(
         path: '/admin-messages',

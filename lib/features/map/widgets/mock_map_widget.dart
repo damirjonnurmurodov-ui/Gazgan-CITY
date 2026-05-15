@@ -23,9 +23,7 @@ class MockMapWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFEDF0F5),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.borderGray.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.7)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: AppColors.shadow,
@@ -75,9 +73,7 @@ class _MapBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Container(color: const Color(0xFFEDF0F5)),
-    );
+    return Positioned.fill(child: Container(color: const Color(0xFFEDF0F5)));
   }
 }
 
@@ -88,9 +84,7 @@ class _GridLines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _GridPainter()),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _GridPainter()));
   }
 }
 
@@ -120,9 +114,7 @@ class _RoadsLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _RoadsPainter()),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _RoadsPainter()));
   }
 }
 
@@ -154,16 +146,8 @@ class _RoadsPainter extends CustomPainter {
     );
 
     final mainRoadX = w * 0.32;
-    canvas.drawLine(
-      Offset(mainRoadX, 0),
-      Offset(mainRoadX, h),
-      mainRoadBorder,
-    );
-    canvas.drawLine(
-      Offset(mainRoadX, 0),
-      Offset(mainRoadX, h),
-      mainRoad,
-    );
+    canvas.drawLine(Offset(mainRoadX, 0), Offset(mainRoadX, h), mainRoadBorder);
+    canvas.drawLine(Offset(mainRoadX, 0), Offset(mainRoadX, h), mainRoad);
 
     final secRoadBorder = Paint()
       ..color = const Color(0xFFDEE2E8)
@@ -180,11 +164,7 @@ class _RoadsPainter extends CustomPainter {
       Offset(w, secRoadY),
       secRoadBorder,
     );
-    canvas.drawLine(
-      Offset(w * 0.28, secRoadY),
-      Offset(w, secRoadY),
-      secRoad,
-    );
+    canvas.drawLine(Offset(w * 0.28, secRoadY), Offset(w, secRoadY), secRoad);
 
     final secRoadX = w * 0.70;
     canvas.drawLine(
@@ -192,11 +172,7 @@ class _RoadsPainter extends CustomPainter {
       Offset(secRoadX, h),
       secRoadBorder,
     );
-    canvas.drawLine(
-      Offset(secRoadX, h * 0.32),
-      Offset(secRoadX, h),
-      secRoad,
-    );
+    canvas.drawLine(Offset(secRoadX, h * 0.32), Offset(secRoadX, h), secRoad);
 
     final smallRoad = Paint()
       ..color = const Color(0xFFF8F9FB)
@@ -236,9 +212,7 @@ class _ParksLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _ParksPainter()),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _ParksPainter()));
   }
 }
 
@@ -257,16 +231,20 @@ class _ParksPainter extends CustomPainter {
       ..strokeWidth = 1.5;
 
     final park = RRect.fromLTRBR(
-      w * 0.04, h * 0.72,
-      w * 0.30, h * 0.96,
+      w * 0.04,
+      h * 0.72,
+      w * 0.30,
+      h * 0.96,
       const Radius.circular(8),
     );
     canvas.drawRRect(park, parkFill);
     canvas.drawRRect(park, parkBorder);
 
     final garden = RRect.fromLTRBR(
-      w * 0.82, h * 0.04,
-      w * 0.96, h * 0.20,
+      w * 0.82,
+      h * 0.04,
+      w * 0.96,
+      h * 0.20,
       const Radius.circular(6),
     );
     canvas.drawRRect(garden, parkFill);
@@ -302,9 +280,7 @@ class _BuildingsLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _BuildingsPainter()),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _BuildingsPainter()));
   }
 }
 
@@ -379,9 +355,7 @@ class _WaterLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _WaterPainter()),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _WaterPainter()));
   }
 }
 
@@ -400,8 +374,10 @@ class _WaterPainter extends CustomPainter {
       ..strokeWidth = 1.2;
 
     final waterRect = RRect.fromLTRBR(
-      w * 0.72, h * 0.04,
-      w * 0.90, h * 0.18,
+      w * 0.72,
+      h * 0.04,
+      w * 0.90,
+      h * 0.18,
       const Radius.circular(14),
     );
     canvas.drawRRect(waterRect, waterFill);

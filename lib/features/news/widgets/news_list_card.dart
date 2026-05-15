@@ -6,11 +6,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../models/news_item.dart';
 
 class NewsListCard extends StatelessWidget {
-  const NewsListCard({
-    super.key,
-    required this.item,
-    this.onTap,
-  });
+  const NewsListCard({super.key, required this.item, this.onTap});
 
   final NewsItem item;
   final VoidCallback? onTap;
@@ -21,9 +17,7 @@ class NewsListCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.borderGray.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.7)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: AppColors.shadow,
@@ -43,11 +37,13 @@ class NewsListCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _NewsImage(color: item.imageColor, icon: item.icon, isOfficial: item.isOfficial),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _NewsContent(item: item),
+                _NewsImage(
+                  color: item.imageColor,
+                  icon: item.icon,
+                  isOfficial: item.isOfficial,
                 ),
+                const SizedBox(width: 14),
+                Expanded(child: _NewsContent(item: item)),
               ],
             ),
           ),
@@ -58,7 +54,11 @@ class NewsListCard extends StatelessWidget {
 }
 
 class _NewsImage extends StatelessWidget {
-  const _NewsImage({required this.color, required this.icon, required this.isOfficial});
+  const _NewsImage({
+    required this.color,
+    required this.icon,
+    required this.isOfficial,
+  });
   final Color color;
   final IconData icon;
   final bool isOfficial;
@@ -87,7 +87,11 @@ class _NewsImage extends StatelessWidget {
                 color: AppColors.primaryBlue,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Icon(LucideIcons.badgeCheck, size: 12, color: AppColors.white),
+              child: const Icon(
+                LucideIcons.badgeCheck,
+                size: 12,
+                color: AppColors.white,
+              ),
             ),
           ),
       ],
@@ -120,33 +124,45 @@ class _NewsContent extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: <Widget>[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.lightBlue,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                item.category,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primaryBlue,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+            Flexible(
+              flex: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlue,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  item.category,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primaryBlue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             const Icon(LucideIcons.clock, size: 11, color: AppColors.mutedText),
             const SizedBox(width: 3),
-            Flexible(
+            Expanded(
               child: Text(
                 item.date,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.caption.copyWith(fontSize: 11),
               ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(LucideIcons.eye, size: 11, color: AppColors.mutedText),
+            const SizedBox(width: 3),
+            Text(
+              '${item.viewsCount}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption.copyWith(fontSize: 11),
             ),
           ],
         ),

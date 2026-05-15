@@ -18,11 +18,7 @@ class QuickPlaceItem {
 }
 
 class QuickPlaceGrid extends StatelessWidget {
-  const QuickPlaceGrid({
-    super.key,
-    required this.items,
-    this.onItemTap,
-  });
+  const QuickPlaceGrid({super.key, required this.items, this.onItemTap});
 
   final List<QuickPlaceItem> items;
   final ValueChanged<String>? onItemTap;
@@ -76,11 +72,7 @@ class _QuickPlaceTile extends StatelessWidget {
                   color: item.color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  item.icon,
-                  size: 22,
-                  color: item.color,
-                ),
+                child: Icon(item.icon, size: 22, color: item.color),
               ),
               const SizedBox(height: 8),
               Text(

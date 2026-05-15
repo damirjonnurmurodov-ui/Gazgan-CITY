@@ -9,6 +9,9 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_state_card.dart';
 import '../../core/widgets/data_status_banner.dart';
+import '../auth/data/auth_repository.dart';
+import '../saved/data/saved_items_repository.dart';
+import '../saved/models/saved_item.dart';
 import 'data/listings_repository.dart';
 import 'models/listing_item.dart';
 
@@ -18,11 +21,15 @@ class ListingDetailScreen extends StatefulWidget {
     required this.listingId,
     this.initialItem,
     this.repository,
+    this.authRepository,
+    this.savedRepository,
   });
 
   final String listingId;
   final ListingItem? initialItem;
   final ListingsRepository? repository;
+  final AuthRepository? authRepository;
+  final SavedItemsRepository? savedRepository;
 
   @override
   State<ListingDetailScreen> createState() => _ListingDetailScreenState();
@@ -30,12 +37,16 @@ class ListingDetailScreen extends StatefulWidget {
 
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   late final ListingsRepository _repository;
+  late final AuthRepository _authRepository;
+  late final SavedItemsRepository _savedRepository;
   late final Future<RepositoryResult<ListingItem?>>? _listingFuture;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? ListingsRepository();
+    _authRepository = widget.authRepository ?? SupabaseAuthRepository();
+    _savedRepository = widget.savedRepository ?? SavedItemsRepository();
     _listingFuture = widget.initialItem == null
         ? _repository.fetchListingResult(widget.listingId)
         : null;
@@ -44,7 +55,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.initialItem != null) {
-      return _ListingDetailBody(item: widget.initialItem!);
+      return _ListingDetailBody(
+        item: widget.initialItem!,
+        authRepository: _authRepository,
+        savedRepository: _savedRepository,
+      );
     }
 
     return FutureBuilder<RepositoryResult<ListingItem?>>(
@@ -77,17 +92,87 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           );
         }
 
-        return _ListingDetailBody(item: item, fallbackMessage: result?.message);
+        return _ListingDetailBody(
+          item: item,
+          fallbackMessage: result?.message,
+          authRepository: _authRepository,
+          savedRepository: _savedRepository,
+        );
       },
     );
   }
 }
 
-class _ListingDetailBody extends StatelessWidget {
-  const _ListingDetailBody({required this.item, this.fallbackMessage});
+class _ListingDetailBody extends StatefulWidget {
+  const _ListingDetailBody({
+    required this.item,
+    required this.authRepository,
+    required this.savedRepository,
+    this.fallbackMessage,
+  });
 
   final ListingItem item;
+  final AuthRepository authRepository;
+  final SavedItemsRepository savedRepository;
   final String? fallbackMessage;
+
+  @override
+  State<_ListingDetailBody> createState() => _ListingDetailBodyState();
+}
+
+class _ListingDetailBodyState extends State<_ListingDetailBody> {
+  bool _isSaved = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedState();
+  }
+
+  Future<void> _loadSavedState() async {
+    final user = widget.authRepository.currentUser;
+    if (user == null) return;
+
+    final savedIds = await widget.savedRepository.fetchSavedItemIds(
+      userId: user.id,
+      type: SavedItemType.listing,
+    );
+    if (!mounted) return;
+    setState(() => _isSaved = savedIds.contains(widget.item.id));
+  }
+
+  Future<void> _toggleSaved() async {
+    final user = widget.authRepository.currentUser;
+    if (user == null) {
+      final redirect = Uri.encodeComponent('/listing-detail/${widget.item.id}');
+      context.push('/login?redirect=$redirect');
+      return;
+    }
+
+    final next = !_isSaved;
+    setState(() {
+      _isSaving = true;
+      _isSaved = next;
+    });
+
+    try {
+      await widget.savedRepository.setSaved(
+        userId: user.id,
+        type: SavedItemType.listing,
+        itemId: widget.item.id,
+        isSaved: next,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaved = !next);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saqlash holatini yangilab bo\'lmadi.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,13 +180,23 @@ class _ListingDetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (fallbackMessage != null) ...<Widget>[
-            DataStatusBanner(message: fallbackMessage!),
+          if (widget.fallbackMessage != null) ...<Widget>[
+            DataStatusBanner(message: widget.fallbackMessage!),
             const SizedBox(height: 14),
           ],
-          _HeroCard(item: item),
+          _HeroCard(item: widget.item),
+          const SizedBox(height: 12),
+          AppButton(
+            label: _isSaved ? 'Saqlangan' : 'Saqlash',
+            icon: _isSaved ? LucideIcons.check : LucideIcons.bookmark,
+            variant: _isSaved
+                ? AppButtonVariant.secondary
+                : AppButtonVariant.ghost,
+            isExpanded: true,
+            onPressed: _isSaving ? null : _toggleSaved,
+          ),
           const SizedBox(height: 16),
-          _InfoGrid(item: item),
+          _InfoGrid(item: widget.item),
           const SizedBox(height: 16),
           AppCard(
             child: Column(
@@ -110,9 +205,9 @@ class _ListingDetailBody extends StatelessWidget {
                 Text('Tavsif', style: AppTextStyles.sectionTitle),
                 const SizedBox(height: 8),
                 Text(
-                  item.description.trim().isEmpty
+                  widget.item.description.trim().isEmpty
                       ? 'E\'lon egasi qo\'shimcha tavsif kiritmagan.'
-                      : item.description,
+                      : widget.item.description,
                   style: AppTextStyles.body,
                 ),
               ],
@@ -132,9 +227,9 @@ class _ListingDetailBody extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    item.phone.trim().isEmpty
+                    widget.item.phone.trim().isEmpty
                         ? 'Telefon raqam kiritilmagan'
-                        : item.phone,
+                        : widget.item.phone,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.cardTitle.copyWith(

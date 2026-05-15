@@ -12,11 +12,15 @@ class SelectedPlaceCard extends StatelessWidget {
     required this.place,
     this.onClose,
     this.onDirections,
+    this.onSave,
+    this.isSaved = false,
   });
 
   final MapPlace place;
   final VoidCallback? onClose;
   final VoidCallback? onDirections;
+  final VoidCallback? onSave;
+  final bool isSaved;
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +28,7 @@ class SelectedPlaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.borderGray.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.7)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: AppColors.shadow,
@@ -49,11 +51,7 @@ class SelectedPlaceCard extends StatelessWidget {
                   color: AppColors.lightBlue,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  place.icon,
-                  size: 22,
-                  color: AppColors.primaryBlue,
-                ),
+                child: Icon(place.icon, size: 22, color: AppColors.primaryBlue),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -111,6 +109,27 @@ class SelectedPlaceCard extends StatelessWidget {
                 backgroundColor: AppColors.primaryBlue,
                 foregroundColor: AppColors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: AppTextStyles.button,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onSave,
+              icon: Icon(
+                isSaved ? LucideIcons.check : LucideIcons.bookmark,
+                size: 18,
+              ),
+              label: Text(isSaved ? 'Saqlangan' : 'Saqlash'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryBlue,
+                side: const BorderSide(color: AppColors.borderGray),
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
