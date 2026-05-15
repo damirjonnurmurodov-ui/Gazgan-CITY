@@ -16,6 +16,7 @@ import '../../features/map/models/map_place.dart';
 import '../../features/news/models/news_item.dart';
 import '../../features/news/news_detail_screen.dart';
 import '../../features/news/news_screen.dart';
+import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/saved/saved_items_screen.dart';
 import '../../features/services/jobs_screen.dart';
@@ -74,6 +75,11 @@ class AppRouter {
         path: '/saved',
         name: 'saved',
         builder: (context, state) => const SavedItemsScreen(),
+      ),
+      GoRoute(
+        path: '/edit-profile',
+        name: 'edit-profile',
+        builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: '/news-detail/:id',

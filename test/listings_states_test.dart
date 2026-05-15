@@ -68,6 +68,24 @@ void main() {
     expect(find.text('Kirish'), findsOneWidget);
   });
 
+  testWidgets('create listing screen shows image picker action', (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      CreateListingScreen(
+        repository: _ListingsStateRepository(),
+        authRepository: _FakeAuthRepository(
+          const AuthUser(id: 'user-1', email: 'ali@example.com'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('E\'lon rasmi'), findsOneWidget);
+    expect(find.text('Rasm tanlash'), findsOneWidget);
+  });
+
   testWidgets('my listings screen shows empty state for signed-in user', (
     tester,
   ) async {
@@ -155,6 +173,11 @@ class _FakeAuthRepository implements AuthRepository {
   }) async {
     return _user;
   }
+
+  @override
+  Future<void> signInWithGoogle({
+    String redirectTo = AuthRepository.defaultOAuthRedirectTo,
+  }) async {}
 
   @override
   Future<void> signOut() async {}

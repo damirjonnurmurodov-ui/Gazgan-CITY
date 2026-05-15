@@ -306,11 +306,24 @@ class _HeroCard extends StatelessWidget {
               color: item.imageColor.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(
-              item.icon,
-              size: 64,
-              color: item.imageColor.withValues(alpha: 0.75),
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: item.imageUrl == null || item.imageUrl!.trim().isEmpty
+                ? Icon(
+                    item.icon,
+                    size: 64,
+                    color: item.imageColor.withValues(alpha: 0.75),
+                  )
+                : Image.network(
+                    item.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        item.icon,
+                        size: 64,
+                        color: item.imageColor.withValues(alpha: 0.75),
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 16),
           Wrap(

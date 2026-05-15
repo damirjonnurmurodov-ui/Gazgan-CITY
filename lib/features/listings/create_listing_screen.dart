@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/data/repository_result.dart';
+import '../../core/storage/image_picker_service.dart';
+import '../../core/storage/image_upload_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
@@ -14,10 +16,18 @@ import 'data/listings_repository.dart';
 import 'models/listing_item.dart';
 
 class CreateListingScreen extends StatefulWidget {
-  const CreateListingScreen({super.key, this.repository, this.authRepository});
+  const CreateListingScreen({
+    super.key,
+    this.repository,
+    this.authRepository,
+    this.imagePicker,
+    this.imageUploadRepository,
+  });
 
   final ListingsRepository? repository;
   final AuthRepository? authRepository;
+  final AppImagePicker? imagePicker;
+  final ImageUploadRepository? imageUploadRepository;
 
   @override
   State<CreateListingScreen> createState() => _CreateListingScreenState();
@@ -32,10 +42,15 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   String? _selectedCategoryKey;
   String? _errorMessage;
+  String? _imageMessage;
+  LocalImageFile? _selectedImage;
   bool _isSubmitting = false;
+  bool _isPickingImage = false;
 
   late final ListingsRepository _repository;
   late final AuthRepository _authRepository;
+  late final AppImagePicker _imagePicker;
+  late final ImageUploadRepository _imageUploadRepository;
   late final Future<RepositoryResult<List<ListingCategory>>> _categoriesFuture;
 
   @override
@@ -43,6 +58,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     super.initState();
     _repository = widget.repository ?? ListingsRepository();
     _authRepository = widget.authRepository ?? SupabaseAuthRepository();
+    _imagePicker = widget.imagePicker ?? DeviceImagePicker();
+    _imageUploadRepository =
+        widget.imageUploadRepository ?? ImageUploadRepository();
     _categoriesFuture = _repository.fetchCategoriesResult();
   }
 
@@ -79,6 +97,22 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     });
 
     try {
+      String? imageUrl;
+      final selectedImage = _selectedImage;
+      if (selectedImage != null) {
+        final uploadResult = await _imageUploadRepository.uploadListingImage(
+          userId: user.id,
+          file: selectedImage,
+        );
+        if (uploadResult.isSuccess) {
+          imageUrl = uploadResult.publicUrl;
+        } else if (mounted) {
+          setState(() {
+            _imageMessage = uploadResult.message;
+          });
+        }
+      }
+
       await _repository.createListing(
         CreateListingInput(
           userId: user.id,
@@ -88,6 +122,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           price: _priceController.text,
           location: _locationController.text,
           phone: phone,
+          imageUrl: imageUrl,
         ),
       );
 
@@ -115,6 +150,29 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     return categories
         .where((category) => _categoryKey(category) == key)
         .firstOrNull;
+  }
+
+  Future<void> _pickImage() async {
+    setState(() {
+      _isPickingImage = true;
+      _imageMessage = null;
+    });
+
+    try {
+      final image = await _imagePicker.pickImage();
+      if (!mounted || image == null) return;
+      setState(() {
+        _selectedImage = image;
+        _imageMessage = 'Rasm tanlandi.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _imageMessage = 'Rasm tanlab bo\'lmadi.';
+      });
+    } finally {
+      if (mounted) setState(() => _isPickingImage = false);
+    }
   }
 
   @override
@@ -191,6 +249,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   label: 'Tavsif',
                   icon: LucideIcons.fileText,
                   maxLines: 4,
+                ),
+                const SizedBox(height: 12),
+                _ListingImagePickerCard(
+                  hasSelectedImage: _selectedImage != null,
+                  isPicking: _isPickingImage,
+                  message: _imageMessage,
+                  onPick: _isSubmitting ? null : _pickImage,
                 ),
                 if (_errorMessage != null) ...<Widget>[
                   const SizedBox(height: 12),
@@ -334,6 +399,78 @@ class _CategoryDropdown extends StatelessWidget {
       decoration: const InputDecoration(
         labelText: 'Kategoriya',
         prefixIcon: Icon(LucideIcons.layers, size: 20),
+      ),
+    );
+  }
+}
+
+class _ListingImagePickerCard extends StatelessWidget {
+  const _ListingImagePickerCard({
+    required this.hasSelectedImage,
+    required this.isPicking,
+    required this.onPick,
+    this.message,
+  });
+
+  final bool hasSelectedImage;
+  final bool isPicking;
+  final VoidCallback? onPick;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.marbleGray,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderGray),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: hasSelectedImage ? AppColors.lightBlue : AppColors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderGray),
+            ),
+            child: Icon(
+              hasSelectedImage ? LucideIcons.check : LucideIcons.image,
+              color: AppColors.primaryBlue,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('E\'lon rasmi', style: AppTextStyles.cardTitle),
+                const SizedBox(height: 4),
+                Text(
+                  message ??
+                      'Bitta rasm tanlash mumkin. Rasm yuklanmasa ham e\'lon yuboriladi.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption.copyWith(
+                    color: message == null
+                        ? AppColors.mutedText
+                        : AppColors.primaryBlue,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                AppButton(
+                  label: isPicking ? 'Tanlanmoqda...' : 'Rasm tanlash',
+                  icon: LucideIcons.imagePlus,
+                  variant: AppButtonVariant.ghost,
+                  onPressed: onPick,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

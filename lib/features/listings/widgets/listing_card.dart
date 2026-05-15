@@ -48,6 +48,7 @@ class ListingCard extends StatelessWidget {
                 _ListingImage(
                   color: item.imageColor,
                   icon: item.icon,
+                  imageUrl: item.imageUrl,
                   isFeatured: item.isFeatured,
                   isOfficial: item.isOfficial,
                 ),
@@ -72,12 +73,14 @@ class _ListingImage extends StatelessWidget {
   const _ListingImage({
     required this.color,
     required this.icon,
+    this.imageUrl,
     required this.isFeatured,
     required this.isOfficial,
   });
 
   final Color color;
   final IconData icon;
+  final String? imageUrl;
   final bool isFeatured;
   final bool isOfficial;
 
@@ -92,7 +95,20 @@ class _ListingImage extends StatelessWidget {
             color: color.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(icon, size: 42, color: color.withValues(alpha: 0.65)),
+          clipBehavior: Clip.antiAlias,
+          child: imageUrl == null || imageUrl!.trim().isEmpty
+              ? Icon(icon, size: 42, color: color.withValues(alpha: 0.65))
+              : Image.network(
+                  imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      icon,
+                      size: 42,
+                      color: color.withValues(alpha: 0.65),
+                    );
+                  },
+                ),
         ),
         if (isFeatured)
           Positioned(

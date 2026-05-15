@@ -213,5 +213,10 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle({
+    String redirectTo = AuthRepository.defaultOAuthRedirectTo,
+  }) async {}
+
+  @override
   Future<void> signOut() async {}
 }

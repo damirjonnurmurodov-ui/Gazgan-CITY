@@ -22,6 +22,29 @@ void main() {
     expect(find.text('Parol'), findsOneWidget);
   });
 
+  testWidgets('login screen shows google sign in button', (tester) async {
+    await _pumpAuthScreen(
+      tester,
+      LoginScreen(repository: _FakeAuthRepository()),
+    );
+
+    expect(find.text('Google orqali davom etish'), findsOneWidget);
+  });
+
+  testWidgets('login screen shows google error without crashing', (
+    tester,
+  ) async {
+    await _pumpAuthScreen(
+      tester,
+      LoginScreen(repository: _FakeAuthRepository(googleThrows: true)),
+    );
+
+    await tester.tap(find.text('Google orqali davom etish'));
+    await tester.pump();
+
+    expect(find.text('Google orqali kirishda xatolik yuz berdi.'), findsOneWidget);
+  });
+
   testWidgets('register screen shows full name email password form', (
     tester,
   ) async {
@@ -35,6 +58,15 @@ void main() {
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Parol'), findsOneWidget);
   });
+
+  testWidgets('register screen shows google sign in button', (tester) async {
+    await _pumpAuthScreen(
+      tester,
+      RegisterScreen(repository: _FakeAuthRepository()),
+    );
+
+    expect(find.text('Google orqali davom etish'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpAuthScreen(WidgetTester tester, Widget child) async {
@@ -47,6 +79,10 @@ Future<void> _pumpAuthScreen(WidgetTester tester, Widget child) async {
 }
 
 class _FakeAuthRepository implements AuthRepository {
+  _FakeAuthRepository({this.googleThrows = false});
+
+  final bool googleThrows;
+
   @override
   AuthUser? get currentUser => null;
 
@@ -68,6 +104,15 @@ class _FakeAuthRepository implements AuthRepository {
     String? fullName,
   }) async {
     return null;
+  }
+
+  @override
+  Future<void> signInWithGoogle({
+    String redirectTo = AuthRepository.defaultOAuthRedirectTo,
+  }) async {
+    if (googleThrows) {
+      throw const AuthFailure('Google orqali kirishda xatolik yuz berdi.');
+    }
   }
 
   @override

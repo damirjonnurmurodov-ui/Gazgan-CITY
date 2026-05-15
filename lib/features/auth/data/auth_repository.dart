@@ -1,9 +1,11 @@
-import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 import '../../../core/supabase/supabase_client.dart';
 import '../models/auth_user.dart';
 
 abstract class AuthRepository {
+  static const String defaultOAuthRedirectTo = 'gazgancity://login-callback';
+
   AuthUser? get currentUser;
 
   Stream<AuthUser?> get authStateChanges;
@@ -19,14 +21,57 @@ abstract class AuthRepository {
     String? fullName,
   });
 
+  Future<void> signInWithGoogle({
+    String redirectTo = defaultOAuthRedirectTo,
+  });
+
   Future<void> signOut();
 }
 
+class AuthFailure implements Exception {
+  const AuthFailure(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+abstract class GoogleOAuthStarter {
+  Future<void> startGoogleOAuth({required String redirectTo});
+}
+
+class SupabaseGoogleOAuthStarter implements GoogleOAuthStarter {
+  SupabaseGoogleOAuthStarter(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<void> startGoogleOAuth({required String redirectTo}) async {
+    final launched = await _client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: redirectTo,
+      authScreenLaunchMode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      throw const AuthFailure('Google orqali kirishda xatolik yuz berdi.');
+    }
+  }
+}
+
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository({SupabaseClient? client}) : _client = client;
+  SupabaseAuthRepository({
+    SupabaseClient? client,
+    GoogleOAuthStarter? googleOAuthStarter,
+  }) : _client = client,
+       _googleOAuthStarter = googleOAuthStarter;
 
   final SupabaseClient? _client;
+  final GoogleOAuthStarter? _googleOAuthStarter;
   SupabaseClient get _supabase => _client ?? supabaseClient;
+  GoogleOAuthStarter get _googleStarter =>
+      _googleOAuthStarter ?? SupabaseGoogleOAuthStarter(_supabase);
 
   @override
   AuthUser? get currentUser {
@@ -71,6 +116,19 @@ class SupabaseAuthRepository implements AuthRepository {
     );
     final user = response.user;
     return user == null ? null : AuthUser.fromSupabase(user);
+  }
+
+  @override
+  Future<void> signInWithGoogle({
+    String redirectTo = AuthRepository.defaultOAuthRedirectTo,
+  }) async {
+    try {
+      await _googleStarter.startGoogleOAuth(redirectTo: redirectTo);
+    } on AuthFailure {
+      rethrow;
+    } catch (_) {
+      throw const AuthFailure('Google orqali kirishda xatolik yuz berdi.');
+    }
   }
 
   @override

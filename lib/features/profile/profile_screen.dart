@@ -8,18 +8,32 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../auth/data/auth_repository.dart';
 import '../auth/models/auth_user.dart';
+import 'data/profile_repository.dart';
+import 'models/user_profile.dart';
 import 'widgets/profile_header_card.dart';
 import 'widgets/profile_menu_item.dart';
 import 'widgets/profile_support_card.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key, this.repository});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key, this.repository, this.profileRepository});
 
   final AuthRepository? repository;
+  final ProfileRepository? profileRepository;
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  AuthRepository get _authRepository =>
+      widget.repository ?? SupabaseAuthRepository();
+
+  ProfileRepository get _profileRepository =>
+      widget.profileRepository ?? ProfileRepository();
 
   @override
   Widget build(BuildContext context) {
-    final authRepository = repository ?? SupabaseAuthRepository();
+    final authRepository = _authRepository;
 
     return StreamBuilder<AuthUser?>(
       stream: authRepository.authStateChanges,
@@ -45,7 +59,11 @@ class ProfileScreen extends StatelessWidget {
               if (user == null)
                 const _SignedOutCard()
               else
-                _SignedInContent(user: user, onLogout: authRepository.signOut),
+                _SignedInContent(
+                  user: user,
+                  onLogout: authRepository.signOut,
+                  profileRepository: _profileRepository,
+                ),
               const SizedBox(height: 24),
               const ProfileSupportCard(),
             ],
@@ -157,94 +175,155 @@ class _SignedOutCard extends StatelessWidget {
   }
 }
 
-class _SignedInContent extends StatelessWidget {
-  const _SignedInContent({required this.user, required this.onLogout});
+class _SignedInContent extends StatefulWidget {
+  const _SignedInContent({
+    required this.user,
+    required this.onLogout,
+    required this.profileRepository,
+  });
 
   final AuthUser user;
   final Future<void> Function() onLogout;
+  final ProfileRepository profileRepository;
+
+  @override
+  State<_SignedInContent> createState() => _SignedInContentState();
+}
+
+class _SignedInContentState extends State<_SignedInContent> {
+  late Future<UserProfile?> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = widget.profileRepository.fetchProfile(widget.user.id);
+  }
+
+  @override
+  void didUpdateWidget(_SignedInContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id ||
+        oldWidget.profileRepository != widget.profileRepository) {
+      _profileFuture = widget.profileRepository.fetchProfile(widget.user.id);
+    }
+  }
+
+  Future<void> _openEditProfile(BuildContext context) async {
+    final updated = await context.push<bool>('/edit-profile');
+    if (!mounted || updated != true) return;
+    setState(() {
+      _profileFuture = widget.profileRepository.fetchProfile(widget.user.id);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        ProfileHeaderCard(name: user.displayName, contact: user.contactLabel),
-        const SizedBox(height: 16),
-        _ActionButtonsRow(
-          onEdit: () => debugPrint('Edit profile'),
-          onPhoto: () => debugPrint('Change photo'),
-          onSettings: () => debugPrint('Settings'),
-        ),
-        const SizedBox(height: 24),
-        ProfileMenuGroup(
-          title: 'Asosiy',
-          items: <Widget>[
-            const ProfileMenuItem(
-              icon: LucideIcons.user,
-              label: 'Shaxsiy ma\'lumotlar',
+    return FutureBuilder<UserProfile?>(
+      future: _profileFuture,
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+
+        return Column(
+          children: <Widget>[
+            ProfileHeaderCard(
+              name: _displayName(widget.user, profile),
+              contact: _contactLabel(widget.user, profile),
+              avatarUrl: profile?.avatarUrl,
             ),
-            ProfileMenuItem(
-              icon: LucideIcons.megaphone,
-              label: 'Mening e\'lonlarim',
-              onTap: () => context.push('/my-listings'),
+            const SizedBox(height: 16),
+            _ActionButtonsRow(
+              onEdit: () => _openEditProfile(context),
+              onPhoto: () => _openEditProfile(context),
+              onSettings: () => debugPrint('Settings'),
             ),
+            const SizedBox(height: 24),
+            ProfileMenuGroup(
+              title: 'Asosiy',
+              items: <Widget>[
+                ProfileMenuItem(
+                  icon: LucideIcons.user,
+                  label: 'Shaxsiy ma\'lumotlar',
+                  onTap: () => _openEditProfile(context),
+                ),
+                ProfileMenuItem(
+                  icon: LucideIcons.megaphone,
+                  label: 'Mening e\'lonlarim',
+                  onTap: () => context.push('/my-listings'),
+                ),
+                ProfileMenuItem(
+                  icon: LucideIcons.bookmark,
+                  label: 'Saqlanganlar',
+                  onTap: () => context.push('/saved'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ProfileMenuGroup(
+              title: 'Xabarlar va yordam',
+              items: <Widget>[
+                ProfileMenuItem(
+                  icon: LucideIcons.messageSquare,
+                  label: 'Admin xabarlari',
+                  onTap: () => context.push('/admin-messages'),
+                ),
+                const ProfileMenuItem(
+                  icon: LucideIcons.send,
+                  label: 'Telegram orqali yordam',
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ProfileMenuGroup(
+              title: 'Sozlamalar',
+              items: <Widget>[
+                const ProfileMenuItem(
+                  icon: LucideIcons.globe,
+                  label: 'Til',
+                  trailingText: 'O\'zbekcha',
+                ),
+                ProfileMenuItem(
+                  icon: LucideIcons.fileText,
+                  label: 'Foydalanish shartlari',
+                  onTap: () => context.push('/terms'),
+                ),
+                ProfileMenuItem(
+                  icon: LucideIcons.shield,
+                  label: 'Maxfiylik siyosati',
+                  onTap: () => context.push('/privacy'),
+                ),
+                const ProfileMenuItem(
+                  icon: LucideIcons.info,
+                  label: 'Ilova versiyasi',
+                  trailingText: 'v1.0.0',
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             ProfileMenuItem(
-              icon: LucideIcons.bookmark,
-              label: 'Saqlanganlar',
-              onTap: () => context.push('/saved'),
+              icon: LucideIcons.logOut,
+              label: 'Chiqish',
+              isDestructive: true,
+              onTap: () async => widget.onLogout(),
             ),
           ],
-        ),
-        const SizedBox(height: 20),
-        ProfileMenuGroup(
-          title: 'Xabarlar va yordam',
-          items: <Widget>[
-            ProfileMenuItem(
-              icon: LucideIcons.messageSquare,
-              label: 'Admin xabarlari',
-              onTap: () => context.push('/admin-messages'),
-            ),
-            const ProfileMenuItem(
-              icon: LucideIcons.send,
-              label: 'Telegram orqali yordam',
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        ProfileMenuGroup(
-          title: 'Sozlamalar',
-          items: <Widget>[
-            const ProfileMenuItem(
-              icon: LucideIcons.globe,
-              label: 'Til',
-              trailingText: 'O\'zbekcha',
-            ),
-            ProfileMenuItem(
-              icon: LucideIcons.fileText,
-              label: 'Foydalanish shartlari',
-              onTap: () => context.push('/terms'),
-            ),
-            ProfileMenuItem(
-              icon: LucideIcons.shield,
-              label: 'Maxfiylik siyosati',
-              onTap: () => context.push('/privacy'),
-            ),
-            const ProfileMenuItem(
-              icon: LucideIcons.info,
-              label: 'Ilova versiyasi',
-              trailingText: 'v1.0.0',
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        ProfileMenuItem(
-          icon: LucideIcons.logOut,
-          label: 'Chiqish',
-          isDestructive: true,
-          onTap: () async => onLogout(),
-        ),
-      ],
+        );
+      },
     );
   }
+}
+
+String _displayName(AuthUser user, UserProfile? profile) {
+  final profileName = profile?.fullName?.trim();
+  if (profileName != null && profileName.isNotEmpty) return profileName;
+  return user.displayName;
+}
+
+String _contactLabel(AuthUser user, UserProfile? profile) {
+  final phone = profile?.phone?.trim();
+  if (phone != null && phone.isNotEmpty) return phone;
+  final address = profile?.address?.trim();
+  if (address != null && address.isNotEmpty) return address;
+  return user.contactLabel;
 }
 
 class _HeaderRow extends StatelessWidget {

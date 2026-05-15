@@ -9,10 +9,12 @@ class ProfileHeaderCard extends StatelessWidget {
     super.key,
     required this.name,
     required this.contact,
+    this.avatarUrl,
   });
 
   final String name;
   final String contact;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -37,23 +39,7 @@ class ProfileHeaderCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.white.withValues(alpha: 0.4),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  LucideIcons.user,
-                  size: 32,
-                  color: AppColors.white,
-                ),
-              ),
+              _ProfileAvatar(avatarUrl: avatarUrl),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -141,6 +127,47 @@ class ProfileHeaderCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({this.avatarUrl});
+
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = avatarUrl?.trim();
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.white.withValues(alpha: 0.4),
+          width: 2,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: url == null || url.isEmpty
+          ? const Icon(
+              LucideIcons.user,
+              size: 32,
+              color: AppColors.white,
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  LucideIcons.user,
+                  size: 32,
+                  color: AppColors.white,
+                );
+              },
+            ),
     );
   }
 }

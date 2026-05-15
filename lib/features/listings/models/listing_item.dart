@@ -149,6 +149,7 @@ class CreateListingInput {
     this.categoryId,
     this.price,
     this.location,
+    this.imageUrl,
   });
 
   final String userId;
@@ -157,6 +158,7 @@ class CreateListingInput {
   final String description;
   final String? price;
   final String? location;
+  final String? imageUrl;
   final String phone;
 
   Map<String, dynamic> toInsertMap() {
@@ -169,6 +171,7 @@ class CreateListingInput {
       'price': _nullableText(price),
       'location': _nullableText(location),
       'phone': phone.trim(),
+      'image_url': _nullableText(imageUrl),
       'status': 'pending',
     };
   }

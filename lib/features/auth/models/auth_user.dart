@@ -18,7 +18,8 @@ class AuthUser {
 
   factory AuthUser.fromSupabase(supabase.User user) {
     final metadata = user.userMetadata ?? const <String, dynamic>{};
-    final fullName = metadata['full_name']?.toString();
+    final fullName =
+        metadata['full_name']?.toString() ?? metadata['name']?.toString();
 
     return AuthUser(
       id: user.id,

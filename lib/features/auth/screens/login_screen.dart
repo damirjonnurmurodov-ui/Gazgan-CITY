@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -7,6 +9,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../data/auth_repository.dart';
+import '../models/auth_user.dart';
+import '../widgets/google_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.repository, this.redirectPath});
@@ -22,13 +26,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   String? _errorMessage;
+  late final AuthRepository _repository;
+  StreamSubscription<AuthUser?>? _authSubscription;
 
-  AuthRepository get _repository =>
-      widget.repository ?? SupabaseAuthRepository();
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? SupabaseAuthRepository();
+    _authSubscription = _repository.authStateChanges.listen((user) {
+      if (user == null || !mounted) return;
+      context.go(_safeRedirectPath(widget.redirectPath));
+    });
+  }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -63,6 +78,33 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitGoogle() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _repository.signInWithGoogle();
+    } on AuthFailure catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Google orqali kirishda xatolik yuz berdi.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
         });
       }
     }
@@ -108,7 +150,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: _isLoading ? 'Tekshirilmoqda...' : 'Kirish',
                     icon: LucideIcons.chevronRight,
                     isExpanded: true,
-                    onPressed: _isLoading ? null : _submit,
+                    onPressed: _isLoading || _isGoogleLoading ? null : _submit,
+                  ),
+                  const SizedBox(height: 12),
+                  GoogleAuthButton(
+                    isLoading: _isGoogleLoading,
+                    onPressed: _isLoading ? null : _submitGoogle,
                   ),
                   const SizedBox(height: 12),
                   AppButton(
