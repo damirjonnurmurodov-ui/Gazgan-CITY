@@ -19,7 +19,11 @@ class MapPlacesRepository {
 
   Future<RepositoryResult<List<MapPlace>>> fetchPlacesResult() async {
     try {
-      final rows = await _supabase.from('map_places').select().limit(40);
+      final rows = await _supabase
+          .from('map_places')
+          .select()
+          .eq('is_active', true)
+          .limit(40);
       final items = <MapPlace>[];
 
       for (var index = 0; index < rows.length; index++) {
@@ -46,6 +50,27 @@ class MapPlacesRepository {
       return const RepositoryResult.fallback(
         fallbackPlaces,
         message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
+      );
+    }
+  }
+
+  Future<RepositoryResult<MapPlace?>> fetchPlaceDetailResult(String id) async {
+    try {
+      final rows = await _supabase
+          .from('map_places')
+          .select()
+          .eq('id', id)
+          .eq('is_active', true)
+          .limit(1);
+      final row = _rowsToMaps(rows).firstOrNull;
+      if (row == null) return const RepositoryResult.live(null);
+      return RepositoryResult.live(
+        MapPlace.fromJson(row, fallbackX: 0.5, fallbackY: 0.5),
+      );
+    } catch (_) {
+      return RepositoryResult.fallback(
+        fallbackPlaces.where((place) => place.id == id).firstOrNull,
+        message: 'Joy ma\'lumotlari vaqtincha mavjud emas.',
       );
     }
   }
@@ -120,4 +145,13 @@ class MapPlacesRepository {
       y: 0.84,
     ),
   ];
+}
+
+List<Map<String, dynamic>> _rowsToMaps(Object? rows) {
+  if (rows is! Iterable) return const <Map<String, dynamic>>[];
+
+  return rows
+      .whereType<Map>()
+      .map((row) => Map<String, dynamic>.from(row))
+      .toList();
 }

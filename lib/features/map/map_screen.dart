@@ -266,6 +266,12 @@ class _MapScreenState extends State<MapScreen> {
                       onDirections: () {
                         debugPrint('Directions to: ${selectedPlace.name}');
                       },
+                      onDetails: () {
+                        context.push(
+                          '/map-place-detail/${selectedPlace.id}',
+                          extra: selectedPlace,
+                        );
+                      },
                       onSave: () {
                         final isSaved =
                             _savedOverrides[selectedPlace.id] ??

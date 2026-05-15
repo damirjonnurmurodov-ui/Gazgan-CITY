@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -7,17 +8,16 @@ class UsefulSectionItem {
   const UsefulSectionItem({
     required this.icon,
     required this.label,
+    this.route,
   });
 
   final IconData icon;
   final String label;
+  final String? route;
 }
 
 class UsefulSectionGrid extends StatelessWidget {
-  const UsefulSectionGrid({
-    super.key,
-    required this.items,
-  });
+  const UsefulSectionGrid({super.key, required this.items});
 
   final List<UsefulSectionItem> items;
 
@@ -47,16 +47,13 @@ class UsefulSectionGrid extends StatelessWidget {
 }
 
 class UsefulSectionCard extends StatelessWidget {
-  const UsefulSectionCard({
-    super.key,
-    required this.item,
-  });
+  const UsefulSectionCard({super.key, required this.item});
 
   final UsefulSectionItem item;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -78,6 +75,19 @@ class UsefulSectionCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+
+    final route = item.route;
+    if (route == null || route.isEmpty) return card;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.push(route),
+        child: card,
       ),
     );
   }

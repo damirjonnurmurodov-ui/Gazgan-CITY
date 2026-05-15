@@ -31,26 +31,70 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<QuickActionItem> _quickActions = <QuickActionItem>[
     QuickActionItem(icon: LucideIcons.users, label: 'Sayyor qabullar'),
-    QuickActionItem(icon: LucideIcons.newspaper, label: 'Yangiliklar'),
-    QuickActionItem(icon: LucideIcons.car, label: 'Taxi'),
-    QuickActionItem(icon: LucideIcons.phone, label: 'Ishonch raqamlari'),
-    QuickActionItem(icon: LucideIcons.shoppingCart, label: 'Gazgan OLX'),
-    QuickActionItem(icon: LucideIcons.mapPin, label: "G'ozg'on xaritasi"),
+    QuickActionItem(
+      icon: LucideIcons.newspaper,
+      label: 'Yangiliklar',
+      route: '/news',
+    ),
+    QuickActionItem(
+      icon: LucideIcons.car,
+      label: 'Taxi',
+      route: '/taxi-services',
+    ),
+    QuickActionItem(
+      icon: LucideIcons.phone,
+      label: 'Ishonch raqamlari',
+      route: '/useful-contacts',
+    ),
+    QuickActionItem(
+      icon: LucideIcons.shoppingCart,
+      label: 'Gazgan OLX',
+      route: '/listings',
+    ),
+    QuickActionItem(
+      icon: LucideIcons.mapPin,
+      label: "G'ozg'on xaritasi",
+      route: '/map',
+    ),
     QuickActionItem(icon: LucideIcons.grid, label: 'Barcha toifalar'),
-    QuickActionItem(icon: LucideIcons.wrench, label: 'Ustalar'),
+    QuickActionItem(
+      icon: LucideIcons.wrench,
+      label: 'Ustalar',
+      route: '/masters',
+    ),
   ];
 
   static const List<UsefulSectionItem> _usefulSections = <UsefulSectionItem>[
-    UsefulSectionItem(icon: LucideIcons.car, label: 'Taxi'),
+    UsefulSectionItem(
+      icon: LucideIcons.car,
+      label: 'Taxi',
+      route: '/taxi-services',
+    ),
     UsefulSectionItem(icon: LucideIcons.building2, label: 'Korxonalar'),
     UsefulSectionItem(icon: LucideIcons.grid, label: 'Barcha toifalar'),
-    UsefulSectionItem(icon: LucideIcons.briefcase, label: "Ish o'rinlari"),
+    UsefulSectionItem(
+      icon: LucideIcons.briefcase,
+      label: "Ish o'rinlari",
+      route: '/jobs',
+    ),
   ];
 
   static const List<LocalServiceItem> _localServices = <LocalServiceItem>[
-    LocalServiceItem(icon: LucideIcons.wrench, label: 'Ustalar'),
-    LocalServiceItem(icon: LucideIcons.zap, label: 'Elektrik'),
-    LocalServiceItem(icon: LucideIcons.droplets, label: 'Santexnik'),
+    LocalServiceItem(
+      icon: LucideIcons.wrench,
+      label: 'Ustalar',
+      route: '/masters',
+    ),
+    LocalServiceItem(
+      icon: LucideIcons.zap,
+      label: 'Elektrik',
+      route: '/masters',
+    ),
+    LocalServiceItem(
+      icon: LucideIcons.droplets,
+      label: 'Santexnik',
+      route: '/masters',
+    ),
     LocalServiceItem(icon: LucideIcons.truck, label: 'Yuk tashish'),
   ];
 

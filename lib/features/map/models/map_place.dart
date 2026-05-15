@@ -12,12 +12,18 @@ class MapPlace {
     required this.icon,
     required this.x,
     required this.y,
+    this.phone = '',
+    this.description = '',
+    this.imageUrl,
   });
 
   final String id;
   final String name;
   final String category;
   final String address;
+  final String phone;
+  final String description;
+  final String? imageUrl;
   final IconData icon;
   final double x;
   final double y;
@@ -44,6 +50,9 @@ class MapPlace {
         'address',
         'location',
       ], fallback: 'G\'ozg\'on shahri'),
+      phone: readString(json, const <String>['phone']),
+      description: readString(json, const <String>['description']),
+      imageUrl: readString(json, const <String>['image_url', 'image']),
       icon: _iconForCategory(category),
       x: readDouble(json, const <String>[
         'x',

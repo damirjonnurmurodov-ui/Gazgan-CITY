@@ -12,6 +12,7 @@ class SelectedPlaceCard extends StatelessWidget {
     required this.place,
     this.onClose,
     this.onDirections,
+    this.onDetails,
     this.onSave,
     this.isSaved = false,
   });
@@ -19,6 +20,7 @@ class SelectedPlaceCard extends StatelessWidget {
   final MapPlace place;
   final VoidCallback? onClose;
   final VoidCallback? onDirections;
+  final VoidCallback? onDetails;
   final VoidCallback? onSave;
   final bool isSaved;
 
@@ -102,13 +104,31 @@ class SelectedPlaceCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: onDirections,
-              icon: const Icon(LucideIcons.navigation, size: 18),
-              label: const Text("Yo'nalish"),
+              onPressed: onDetails,
+              icon: const Icon(LucideIcons.info, size: 18),
+              label: const Text('Batafsil'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
                 foregroundColor: AppColors.white,
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: AppTextStyles.button,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onDirections,
+              icon: const Icon(LucideIcons.navigation, size: 18),
+              label: const Text("Yo'nalish"),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryBlue,
+                side: const BorderSide(color: AppColors.borderGray),
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),

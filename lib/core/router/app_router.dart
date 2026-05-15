@@ -10,12 +10,18 @@ import '../../features/listings/listing_detail_screen.dart';
 import '../../features/listings/listings_screen.dart';
 import '../../features/listings/models/listing_item.dart';
 import '../../features/listings/my_listings_screen.dart';
+import '../../features/map/map_place_detail_screen.dart';
 import '../../features/map/map_screen.dart';
+import '../../features/map/models/map_place.dart';
 import '../../features/news/models/news_item.dart';
 import '../../features/news/news_detail_screen.dart';
 import '../../features/news/news_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/saved/saved_items_screen.dart';
+import '../../features/services/jobs_screen.dart';
+import '../../features/services/masters_screen.dart';
+import '../../features/services/taxi_services_screen.dart';
+import '../../features/services/useful_contacts_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/simple_info_screen.dart';
@@ -77,6 +83,37 @@ class AppRouter {
           return NewsDetailScreen(
             newsId: state.pathParameters['id'] ?? '',
             initialItem: extra is NewsItem ? extra : null,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/taxi-services',
+        name: 'taxi-services',
+        builder: (context, state) => const TaxiServicesScreen(),
+      ),
+      GoRoute(
+        path: '/masters',
+        name: 'masters',
+        builder: (context, state) => const MastersScreen(),
+      ),
+      GoRoute(
+        path: '/useful-contacts',
+        name: 'useful-contacts',
+        builder: (context, state) => const UsefulContactsScreen(),
+      ),
+      GoRoute(
+        path: '/jobs',
+        name: 'jobs',
+        builder: (context, state) => const JobsScreen(),
+      ),
+      GoRoute(
+        path: '/map-place-detail/:id',
+        name: 'map-place-detail',
+        builder: (context, state) {
+          final extra = state.extra;
+          return MapPlaceDetailScreen(
+            placeId: state.pathParameters['id'] ?? '',
+            initialPlace: extra is MapPlace ? extra : null,
           );
         },
       ),

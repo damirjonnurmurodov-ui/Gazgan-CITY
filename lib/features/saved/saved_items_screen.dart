@@ -135,7 +135,7 @@ class _SavedItemsScreenState extends State<SavedItemsScreen> {
       case SavedItemType.news:
         context.push('/news-detail/${item.itemId}', extra: item.news);
       case SavedItemType.mapPlace:
-        context.go('/map');
+        context.push('/map-place-detail/${item.itemId}', extra: item.mapPlace);
     }
   }
 }
