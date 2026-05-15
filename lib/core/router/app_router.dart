@@ -18,6 +18,8 @@ import '../../features/news/news_detail_screen.dart';
 import '../../features/news/news_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/prayer/prayer_times_screen.dart';
+import '../../features/receptions/mobile_receptions_screen.dart';
 import '../../features/saved/saved_items_screen.dart';
 import '../../features/services/jobs_screen.dart';
 import '../../features/services/masters_screen.dart';
@@ -80,6 +82,21 @@ class AppRouter {
         path: '/edit-profile',
         name: 'edit-profile',
         builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/prayer-times',
+        name: 'prayer-times',
+        builder: (context, state) => const PrayerTimesScreen(),
+      ),
+      GoRoute(
+        path: '/receptions',
+        name: 'receptions',
+        builder: (context, state) => const MobileReceptionsScreen(),
+      ),
+      GoRoute(
+        path: '/mobile-receptions',
+        name: 'mobile-receptions',
+        builder: (context, state) => const MobileReceptionsScreen(),
       ),
       GoRoute(
         path: '/news-detail/:id',
@@ -149,6 +166,15 @@ class AppRouter {
           message:
               'Shaxsiy ma\'lumotlar faqat shahar xizmatlari uchun ishlatiladi.',
           icon: LucideIcons.shield,
+        ),
+      ),
+      GoRoute(
+        path: '/about-app',
+        name: 'about-app',
+        builder: (context, state) => const SimpleInfoScreen(
+          title: 'Ilova haqida',
+          message: 'Gazgan City v1.0.0\nDastur muallifi: Nurmurodov Damirjon',
+          icon: LucideIcons.info,
         ),
       ),
       StatefulShellRoute.indexedStack(

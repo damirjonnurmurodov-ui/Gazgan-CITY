@@ -10,6 +10,7 @@ import '../auth/data/auth_repository.dart';
 import '../auth/models/auth_user.dart';
 import 'data/profile_repository.dart';
 import 'models/user_profile.dart';
+import 'widgets/profile_about_card.dart';
 import 'widgets/profile_header_card.dart';
 import 'widgets/profile_menu_item.dart';
 import 'widgets/profile_support_card.dart';
@@ -66,6 +67,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               const SizedBox(height: 24),
               const ProfileSupportCard(),
+              const SizedBox(height: 16),
+              const ProfileAboutCard(),
             ],
           ),
         );
@@ -146,26 +149,31 @@ class _SignedOutCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          const ProfileMenuGroup(
+          ProfileMenuGroup(
             title: 'Sozlamalar',
             items: <Widget>[
-              ProfileMenuItem(
+              const ProfileMenuItem(
                 icon: LucideIcons.globe,
                 label: 'Til',
                 trailingText: 'O\'zbekcha',
               ),
-              ProfileMenuItem(
+              const ProfileMenuItem(
                 icon: LucideIcons.fileText,
                 label: 'Foydalanish shartlari',
               ),
-              ProfileMenuItem(
+              const ProfileMenuItem(
                 icon: LucideIcons.shield,
                 label: 'Maxfiylik siyosati',
               ),
-              ProfileMenuItem(
+              const ProfileMenuItem(
                 icon: LucideIcons.info,
                 label: 'Ilova versiyasi',
                 trailingText: 'v1.0.0',
+              ),
+              ProfileMenuItem(
+                icon: LucideIcons.info,
+                label: 'Ilova haqida',
+                onTap: () => context.push('/about-app'),
               ),
             ],
           ),
@@ -295,6 +303,11 @@ class _SignedInContentState extends State<_SignedInContent> {
                   icon: LucideIcons.info,
                   label: 'Ilova versiyasi',
                   trailingText: 'v1.0.0',
+                ),
+                ProfileMenuItem(
+                  icon: LucideIcons.info,
+                  label: 'Ilova haqida',
+                  onTap: () => context.push('/about-app'),
                 ),
               ],
             ),

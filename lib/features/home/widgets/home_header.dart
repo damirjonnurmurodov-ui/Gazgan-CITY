@@ -46,26 +46,18 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const _IconTile(
-              icon: LucideIcons.bell,
-              showDot: true,
-            ),
+            const _IconTile(icon: LucideIcons.bell, showDot: true),
             const SizedBox(width: 10),
             const _AvatarTile(),
           ],
         ),
-        const SizedBox(height: 14),
-        const _OfficialBadge(),
       ],
     );
   }
 }
 
 class _IconTile extends StatelessWidget {
-  const _IconTile({
-    required this.icon,
-    this.showDot = false,
-  });
+  const _IconTile({required this.icon, this.showDot = false});
 
   final IconData icon;
   final bool showDot;
@@ -135,44 +127,6 @@ class _AvatarTile extends StatelessWidget {
         LucideIcons.user,
         color: AppColors.primaryBlue,
         size: 26,
-      ),
-    );
-  }
-}
-
-class _OfficialBadge extends StatelessWidget {
-  const _OfficialBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.goldAccent),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            LucideIcons.shieldCheck,
-            color: AppColors.goldAccent,
-            size: 16,
-          ),
-          const SizedBox(width: 7),
-          Flexible(
-            child: Text(
-              "Hokimiyat tomonidan qo'llab-quvvatlanadi",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.goldAccent,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

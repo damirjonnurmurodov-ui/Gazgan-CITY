@@ -22,6 +22,7 @@ void main() {
     expect(find.text('Kirish'), findsOneWidget);
     expect(find.text('Ro\'yxatdan o\'tish'), findsOneWidget);
     expect(find.text('Mening e\'lonlarim'), findsNothing);
+    expect(find.text('Dastur muallifi: Nurmurodov Damirjon'), findsOneWidget);
   });
 
   testWidgets('profile screen shows account menu when user is signed in', (
@@ -62,9 +63,8 @@ void main() {
         ),
         GoRoute(
           path: '/edit-profile',
-          builder: (context, state) => const Scaffold(
-            body: Text('Profilni tahrirlash'),
-          ),
+          builder: (context, state) =>
+              const Scaffold(body: Text('Profilni tahrirlash')),
         ),
       ],
     );

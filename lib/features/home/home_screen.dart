@@ -6,6 +6,7 @@ import '../../core/widgets/data_status_banner.dart';
 import '../../core/widgets/section_header.dart';
 import '../news/data/news_repository.dart';
 import '../news/models/news_item.dart';
+import '../prayer/widgets/home_prayer_times_card.dart';
 import 'data/home_repository.dart';
 import 'models/home_content.dart';
 import 'widgets/compact_news_card.dart';
@@ -30,7 +31,11 @@ class _HomeScreenState extends State<HomeScreen> {
   late final Future<RepositoryResult<HomeContent>> _homeFuture;
 
   static const List<QuickActionItem> _quickActions = <QuickActionItem>[
-    QuickActionItem(icon: LucideIcons.users, label: 'Sayyor qabullar'),
+    QuickActionItem(
+      icon: LucideIcons.users,
+      label: 'Sayyor qabullar',
+      route: '/receptions',
+    ),
     QuickActionItem(
       icon: LucideIcons.newspaper,
       label: 'Yangiliklar',
@@ -52,11 +57,15 @@ class _HomeScreenState extends State<HomeScreen> {
       route: '/listings',
     ),
     QuickActionItem(
-      icon: LucideIcons.mapPin,
-      label: "G'ozg'on xaritasi",
-      route: '/map',
+      icon: LucideIcons.clock,
+      label: 'Namoz vaqtlari',
+      route: '/prayer-times',
     ),
-    QuickActionItem(icon: LucideIcons.grid, label: 'Barcha toifalar'),
+    QuickActionItem(
+      icon: LucideIcons.briefcase,
+      label: "Ish o'rinlari",
+      route: '/jobs',
+    ),
     QuickActionItem(
       icon: LucideIcons.wrench,
       label: 'Ustalar',
@@ -132,6 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 announcementCount: content.announcementCount,
                 receptionCount: content.receptionCount,
               ),
+              const SizedBox(height: 16),
+              const HomePrayerTimesCard(),
               const SizedBox(height: 16),
               OfficialAnnouncementCard(announcement: content.announcement),
               const SizedBox(height: 16),

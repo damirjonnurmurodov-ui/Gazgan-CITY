@@ -28,10 +28,8 @@ void main() {
       HomeScreen(repository: _ThrowingHomeRepository()),
     );
 
-    expect(
-      find.text("Hokimiyat tomonidan qo'llab-quvvatlanadi"),
-      findsOneWidget,
-    );
+    expect(find.text("Hokimiyat tomonidan qo'llab-quvvatlanadi"), findsNothing);
+    expect(find.text('Namoz vaqtlari'), findsWidgets);
     expect(find.text('Bugun Marmarobod MFYda sayyor qabul'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -420));
