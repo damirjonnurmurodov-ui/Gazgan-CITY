@@ -3,9 +3,12 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../models/home_content.dart';
 
 class OfficialAnnouncementCard extends StatelessWidget {
-  const OfficialAnnouncementCard({super.key});
+  const OfficialAnnouncementCard({super.key, required this.announcement});
+
+  final HomeAnnouncement announcement;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +57,7 @@ class OfficialAnnouncementCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    "Rasmiy e'lon",
+                    announcement.badge,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.caption.copyWith(
@@ -64,7 +67,7 @@ class OfficialAnnouncementCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Bugun Marmarobod MFYda sayyor qabul',
+                  announcement.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.cardTitle.copyWith(
@@ -74,7 +77,7 @@ class OfficialAnnouncementCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Soat 15:00 da hokim sayyor qabuli bo'lib o'tadi",
+                  announcement.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodyMuted.copyWith(

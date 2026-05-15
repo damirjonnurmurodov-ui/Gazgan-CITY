@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../core/data/repository_result.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_search_field.dart';
 import '../../core/widgets/category_chip.dart';
+import '../../core/widgets/data_status_banner.dart';
 import '../../core/widgets/section_header.dart';
+import 'data/map_places_repository.dart';
 import 'models/map_place.dart';
 import 'widgets/mock_map_widget.dart';
 import 'widgets/quick_place_card.dart';
 import 'widgets/selected_place_card.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.repository});
+
+  final MapPlacesRepository? repository;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -21,63 +26,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   String? _selectedPlaceId;
   String _selectedCategory = 'Barchasi';
-
-  static const List<MapPlace> _places = <MapPlace>[
-    MapPlace(
-      id: '1',
-      name: "Hokimiyat",
-      category: "Davlat idorasi",
-      address: "Mustaqillik ko'chasi, 1-uy, G'ozg'on shahri",
-      icon: LucideIcons.building2,
-      x: 0.27,
-      y: 0.30,
-    ),
-    MapPlace(
-      id: '2',
-      name: 'IIB bo\'limi',
-      category: "Davlat idorasi",
-      address: "Tinchlik ko'chasi, 15-uy, G'ozg'on shahri",
-      icon: LucideIcons.shield,
-      x: 0.73,
-      y: 0.28,
-    ),
-    MapPlace(
-      id: '3',
-      name: 'Markaziy kasalxona',
-      category: 'Tibbiyot',
-      address: "Bunyodkor ko'chasi, 42-uy, G'ozg'on shahri",
-      icon: LucideIcons.heartPulse,
-      x: 0.13,
-      y: 0.58,
-    ),
-    MapPlace(
-      id: '4',
-      name: '1-sonli maktab',
-      category: 'Ta\'lim',
-      address: "Navoiy ko'chasi, 8-uy, G'ozg'on shahri",
-      icon: LucideIcons.graduationCap,
-      x: 0.50,
-      y: 0.42,
-    ),
-    MapPlace(
-      id: '5',
-      name: 'Markaziy bozor',
-      category: 'Savdo',
-      address: "Bozor ko'chasi, 3-uy, G'ozg'on shahri",
-      icon: LucideIcons.shoppingBag,
-      x: 0.68,
-      y: 0.68,
-    ),
-    MapPlace(
-      id: '6',
-      name: 'Istirohat bog\'i',
-      category: 'Dam olish',
-      address: "Tabiat ko'chasi, 10-uy, G'ozg'on shahri",
-      icon: LucideIcons.trees,
-      x: 0.16,
-      y: 0.84,
-    ),
-  ];
+  late final Future<RepositoryResult<List<MapPlace>>> _placesFuture;
 
   static const List<String> _categories = <String>[
     'Barchasi',
@@ -128,29 +77,31 @@ class _MapScreenState extends State<MapScreen> {
     ),
   ];
 
-  List<MapPlace> get _filteredPlaces {
-    if (_selectedCategory == 'Barchasi') {
-      return _places;
-    }
-    return _places.where((p) => p.category == _selectedCategory).toList();
+  @override
+  void initState() {
+    super.initState();
+    _placesFuture = (widget.repository ?? MapPlacesRepository())
+        .fetchPlacesResult();
   }
 
-  MapPlace? get _selectedPlace {
+  List<MapPlace> _filteredPlaces(List<MapPlace> places) {
+    if (_selectedCategory == 'Barchasi') return places;
+    return places
+        .where((place) => place.category == _selectedCategory)
+        .toList();
+  }
+
+  MapPlace? _selectedPlace(List<MapPlace> places) {
     if (_selectedPlaceId == null) return null;
-    try {
-      return _places.firstWhere((p) => p.id == _selectedPlaceId);
-    } catch (_) {
-      return null;
+    for (final place in places) {
+      if (place.id == _selectedPlaceId) return place;
     }
+    return null;
   }
 
   void _onPlaceSelected(String id) {
     setState(() {
-      if (_selectedPlaceId == id) {
-        _selectedPlaceId = null;
-      } else {
-        _selectedPlaceId = id;
-      }
+      _selectedPlaceId = _selectedPlaceId == id ? null : id;
     });
   }
 
@@ -161,75 +112,111 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  void _onQuickPlaceTap(String id) {
+  void _onQuickPlaceTap(String id, List<MapPlace> places) {
+    final selectedId = _findQuickPlaceId(id, places);
     setState(() {
-      _selectedPlaceId = id == 'gov'
-          ? '1'
-          : id == 'police'
-              ? '2'
-              : id == 'hospital'
-                  ? '3'
-                  : id == 'school'
-                      ? '4'
-                      : id == 'market'
-                          ? '5'
-                          : id == 'park'
-                              ? '6'
-                              : null;
+      _selectedPlaceId = selectedId;
     });
+  }
+
+  String? _findQuickPlaceId(String id, List<MapPlace> places) {
+    bool match(MapPlace place, List<String> terms) {
+      final text = '${place.name} ${place.category}'.toLowerCase();
+      return terms.any(text.contains);
+    }
+
+    final terms = switch (id) {
+      'gov' => <String>['hokim', 'davlat'],
+      'police' => <String>['iib', 'polits', 'shield'],
+      'hospital' => <String>['kasal', 'tibb'],
+      'school' => <String>['maktab', 'ta\'lim'],
+      'market' => <String>['bozor', 'savdo'],
+      'park' => <String>['park', 'bog', 'dam'],
+      _ => <String>[],
+    };
+
+    for (final place in places) {
+      if (match(place, terms)) return place.id;
+    }
+    return places.isEmpty ? null : places.first.id;
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
-        children: <Widget>[
-          Text(
-            'Xarita',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.screenTitle,
-          ),
-          const SizedBox(height: 14),
-          const AppSearchField(
-            hintText: 'Xaritadan qidirish...',
-          ),
-          const SizedBox(height: 12),
-          _CategoryChipRow(
-            categories: _categories,
-            selectedCategory: _selectedCategory,
-            onCategorySelected: _onCategorySelected,
-          ),
-          const SizedBox(height: 16),
-          MockMapWidget(
-            places: _filteredPlaces,
-            selectedPlaceId: _selectedPlaceId,
-            onPlaceSelected: _onPlaceSelected,
-          ),
-          if (_selectedPlace != null) ...[
-            const SizedBox(height: 16),
-            SelectedPlaceCard(
-              place: _selectedPlace!,
-              onClose: () {
-                setState(() {
-                  _selectedPlaceId = null;
-                });
-              },
-              onDirections: () {
-                debugPrint('Directions to: ${_selectedPlace!.name}');
-              },
-            ),
-          ],
-          const SizedBox(height: 20),
-          const SectionHeader(title: 'Tezkor joylar'),
-          const SizedBox(height: 12),
-          QuickPlaceGrid(
-            items: _quickPlaces,
-            onItemTap: _onQuickPlaceTap,
-          ),
-        ],
+    return FutureBuilder<RepositoryResult<List<MapPlace>>>(
+      future: _placesFuture,
+      initialData: const RepositoryResult.fallback(
+        MapPlacesRepository.fallbackPlaces,
+        message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
       ),
+      builder: (context, snapshot) {
+        final result =
+            snapshot.data ??
+            const RepositoryResult.fallback(
+              MapPlacesRepository.fallbackPlaces,
+              message: 'Xarita vaqtincha lokal obyektlardan ko\'rsatildi.',
+            );
+        final places = result.data;
+        final filteredPlaces = _filteredPlaces(places);
+        final selectedPlace = _selectedPlace(places);
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+        return SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
+            children: <Widget>[
+              Text(
+                'Xarita',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.screenTitle,
+              ),
+              if (isLoading) ...[
+                const SizedBox(height: 10),
+                const LinearProgressIndicator(minHeight: 2),
+              ] else if (result.isFallback) ...[
+                const SizedBox(height: 10),
+                DataStatusBanner(message: result.message!),
+              ],
+              const SizedBox(height: 14),
+              const AppSearchField(hintText: 'Xaritadan qidirish...'),
+              const SizedBox(height: 12),
+              _CategoryChipRow(
+                categories: _categories,
+                selectedCategory: _selectedCategory,
+                onCategorySelected: _onCategorySelected,
+              ),
+              const SizedBox(height: 16),
+              MockMapWidget(
+                places: filteredPlaces,
+                selectedPlaceId: _selectedPlaceId,
+                onPlaceSelected: _onPlaceSelected,
+              ),
+              if (selectedPlace != null) ...[
+                const SizedBox(height: 16),
+                SelectedPlaceCard(
+                  place: selectedPlace,
+                  onClose: () {
+                    setState(() {
+                      _selectedPlaceId = null;
+                    });
+                  },
+                  onDirections: () {
+                    debugPrint('Directions to: ${selectedPlace.name}');
+                  },
+                ),
+              ],
+              const SizedBox(height: 20),
+              const SectionHeader(title: 'Tezkor joylar'),
+              const SizedBox(height: 12),
+              QuickPlaceGrid(
+                items: _quickPlaces,
+                onItemTap: (id) => _onQuickPlaceTap(id, places),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

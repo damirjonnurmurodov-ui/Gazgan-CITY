@@ -6,7 +6,14 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_card.dart';
 
 class WeatherStatusCard extends StatelessWidget {
-  const WeatherStatusCard({super.key});
+  const WeatherStatusCard({
+    super.key,
+    required this.announcementCount,
+    required this.receptionCount,
+  });
+
+  final int announcementCount;
+  final int receptionCount;
 
   @override
   Widget build(BuildContext context) {
@@ -73,17 +80,17 @@ class WeatherStatusCard extends StatelessWidget {
           SizedBox(
             width: 150,
             child: Column(
-              children: const <Widget>[
+              children: <Widget>[
                 _StatusPill(
                   icon: LucideIcons.megaphone,
                   label: "Bugungi e'lonlar",
-                  value: '3',
+                  value: announcementCount.toString(),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _StatusPill(
                   icon: LucideIcons.users,
                   label: 'Sayyor qabullar',
-                  value: '1',
+                  value: receptionCount.toString(),
                 ),
               ],
             ),

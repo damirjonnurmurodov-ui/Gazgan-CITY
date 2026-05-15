@@ -25,9 +25,7 @@ class ListingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.borderGray.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: AppColors.borderGray.withValues(alpha: 0.7)),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: AppColors.shadow,
@@ -94,11 +92,7 @@ class _ListingImage extends StatelessWidget {
             color: color.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(
-            icon,
-            size: 42,
-            color: color.withValues(alpha: 0.65),
-          ),
+          child: Icon(icon, size: 42, color: color.withValues(alpha: 0.65)),
         ),
         if (isFeatured)
           Positioned(
@@ -202,9 +196,7 @@ class _ListingInfo extends StatelessWidget {
                 child: Icon(
                   isFavorite ? LucideIcons.heart : LucideIcons.heartOff,
                   size: 16,
-                  color: isFavorite
-                      ? AppColors.redDanger
-                      : AppColors.mutedText,
+                  color: isFavorite ? AppColors.redDanger : AppColors.mutedText,
                 ),
               ),
             ),
@@ -254,22 +246,63 @@ class _ListingInfo extends StatelessWidget {
                 style: AppTextStyles.caption,
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(
-              LucideIcons.clock,
-              size: 12,
-              color: AppColors.mutedText,
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: <Widget>[
+            const Icon(LucideIcons.clock, size: 12, color: AppColors.mutedText),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                item.date,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption,
+              ),
             ),
+            const SizedBox(width: 10),
+            const Icon(LucideIcons.eye, size: 12, color: AppColors.mutedText),
             const SizedBox(width: 4),
             Text(
-              item.date,
+              '${item.viewsCount}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.caption,
             ),
+            if (item.status != ListingStatus.active) ...<Widget>[
+              const SizedBox(width: 8),
+              Flexible(child: _StatusBadge(status: item.statusLabel)),
+            ],
           ],
         ),
       ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.goldAccent.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        status,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.goldAccent,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 }

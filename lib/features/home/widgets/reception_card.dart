@@ -5,9 +5,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../models/home_content.dart';
 
 class ReceptionCard extends StatelessWidget {
-  const ReceptionCard({super.key});
+  const ReceptionCard({super.key, required this.reception});
+
+  final HomeReception reception;
 
   @override
   Widget build(BuildContext context) {
@@ -33,14 +36,14 @@ class ReceptionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'Hokim sayyor qabuli',
+                  reception.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.cardTitle,
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Marmarobod MFY',
+                  reception.location,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodyMuted,
@@ -56,7 +59,7 @@ class ReceptionCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Bugun, 15:00',
+                        reception.time,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.caption.copyWith(fontSize: 13),

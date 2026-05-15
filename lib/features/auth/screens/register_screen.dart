@@ -1,0 +1,241 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../data/auth_repository.dart';
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key, this.repository, this.redirectPath});
+
+  final AuthRepository? repository;
+  final String? redirectPath;
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  AuthRepository get _repository =>
+      widget.repository ?? SupabaseAuthRepository();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.length < 6) {
+      setState(() {
+        _errorMessage =
+            'Ism, email va kamida 6 belgili parolni to\'liq kiriting.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _repository.signUpWithEmail(
+        email: email,
+        password: password,
+        fullName: name,
+      );
+      if (!mounted) return;
+      context.go(_safeRedirectPath(widget.redirectPath));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Ro\'yxatdan o\'tishda xatolik yuz berdi.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+          children: <Widget>[
+            _RegisterHeader(),
+            const SizedBox(height: 22),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _RegisterTextField(
+                    controller: _nameController,
+                    label: 'Ism familiya',
+                    icon: LucideIcons.user,
+                  ),
+                  const SizedBox(height: 14),
+                  _RegisterTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    icon: LucideIcons.mail,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 14),
+                  _RegisterTextField(
+                    controller: _passwordController,
+                    label: 'Parol',
+                    icon: LucideIcons.lock,
+                    obscureText: true,
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _errorMessage!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.redDanger,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  AppButton(
+                    label: _isLoading
+                        ? 'Yaratilmoqda...'
+                        : 'Ro\'yxatdan o\'tish',
+                    icon: LucideIcons.chevronRight,
+                    isExpanded: true,
+                    onPressed: _isLoading ? null : _submit,
+                  ),
+                  const SizedBox(height: 12),
+                  AppButton(
+                    label: 'Kirish',
+                    icon: LucideIcons.logIn,
+                    variant: AppButtonVariant.ghost,
+                    isExpanded: true,
+                    onPressed: () {
+                      final redirect = widget.redirectPath;
+                      if (redirect == null || redirect.trim().isEmpty) {
+                        context.push('/login');
+                        return;
+                      }
+
+                      context.push(
+                        '/login?redirect=${Uri.encodeComponent(redirect)}',
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _safeRedirectPath(String? redirectPath) {
+  final redirect = redirectPath?.trim();
+  if (redirect == null || redirect.isEmpty || !redirect.startsWith('/')) {
+    return '/profile';
+  }
+  if (redirect.startsWith('//')) return '/profile';
+  return redirect;
+}
+
+class _RegisterHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: AppColors.lightBlue,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Icon(
+            LucideIcons.userPlus,
+            color: AppColors.primaryBlue,
+            size: 28,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Ro\'yxatdan o\'tish',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.screenTitle,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Mahalliy xizmatlardan foydalanish uchun akkaunt yarating.',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMuted,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RegisterTextField extends StatelessWidget {
+  const _RegisterTextField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.keyboardType,
+    this.obscureText = false,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final bool obscureText;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+      ),
+    );
+  }
+}

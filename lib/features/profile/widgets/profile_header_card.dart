@@ -5,7 +5,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
-  const ProfileHeaderCard({super.key});
+  const ProfileHeaderCard({
+    super.key,
+    required this.name,
+    required this.contact,
+  });
+
+  final String name;
+  final String contact;
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +22,7 @@ class ProfileHeaderCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[
-            Color(0xFF1368E8),
-            Color(0xFF061B46),
-          ],
+          colors: <Color>[Color(0xFF1368E8), Color(0xFF061B46)],
         ),
         boxShadow: const <BoxShadow>[
           BoxShadow(
@@ -59,7 +63,7 @@ class ProfileHeaderCard extends StatelessWidget {
                       children: <Widget>[
                         Flexible(
                           child: Text(
-                            'Damir Nurmurodov',
+                            name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.cardTitle.copyWith(
@@ -123,7 +127,7 @@ class ProfileHeaderCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Gazgan City foydalanuvchisi',
+                    contact,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.caption.copyWith(

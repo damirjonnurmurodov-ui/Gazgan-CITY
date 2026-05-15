@@ -1,70 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_card.dart';
+import '../auth/data/auth_repository.dart';
+import '../auth/models/auth_user.dart';
 import 'widgets/profile_header_card.dart';
 import 'widgets/profile_menu_item.dart';
 import 'widgets/profile_support_card.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.repository});
+
+  final AuthRepository? repository;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
+    final authRepository = repository ?? SupabaseAuthRepository();
+
+    return StreamBuilder<AuthUser?>(
+      stream: authRepository.authStateChanges,
+      initialData: authRepository.currentUser,
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+
+        return SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 128),
+            children: <Widget>[
+              _HeaderRow(),
+              const SizedBox(height: 6),
+              Text(
+                user == null
+                    ? 'Shaxsiy kabinetdan foydalanish uchun tizimga kiring'
+                    : 'Shaxsiy kabinet va foydali bo\'limlar',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMuted,
+              ),
+              const SizedBox(height: 18),
+              if (user == null)
+                const _SignedOutCard()
+              else
+                _SignedInContent(user: user, onLogout: authRepository.signOut),
+              const SizedBox(height: 24),
+              const ProfileSupportCard(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SignedOutCard extends StatelessWidget {
+  const _SignedOutCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _HeaderRow(),
-          const SizedBox(height: 6),
-          Text(
-            'Shaxsiy kabinet va foydali bo\'limlar',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.bodyMuted,
-          ),
-          const SizedBox(height: 18),
-          const ProfileHeaderCard(),
-          const SizedBox(height: 16),
-          _ActionButtonsRow(
-            onEdit: () => debugPrint('Edit profile'),
-            onPhoto: () => debugPrint('Change photo'),
-            onSettings: () => debugPrint('Settings'),
-          ),
-          const SizedBox(height: 24),
-          const ProfileMenuGroup(
-            title: 'Asosiy',
-            items: <Widget>[
-              ProfileMenuItem(
-                icon: LucideIcons.user,
-                label: 'Shaxsiy ma\'lumotlar',
+          Row(
+            children: <Widget>[
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlue,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  LucideIcons.user,
+                  color: AppColors.primaryBlue,
+                  size: 30,
+                ),
               ),
-              ProfileMenuItem(
-                icon: LucideIcons.megaphone,
-                label: 'Mening e\'lonlarim',
-              ),
-              ProfileMenuItem(
-                icon: LucideIcons.bookmark,
-                label: 'Saqlanganlar',
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Profilga kiring',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.cardTitle,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'E\'lon berish va saqlanganlarni ko\'rish uchun login kerak.',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const ProfileMenuGroup(
-            title: 'Xabarlar va hamkorlik',
-            items: <Widget>[
-              ProfileMenuItem(
-                icon: LucideIcons.messageSquare,
-                label: 'Admin xabarlari',
+          const SizedBox(height: 16),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: AppButton(
+                  label: 'Kirish',
+                  icon: LucideIcons.logIn,
+                  isExpanded: true,
+                  onPressed: () => context.push('/login'),
+                ),
               ),
-              ProfileMenuItem(
-                icon: LucideIcons.briefcase,
-                label: 'Biznes hamkorlik',
-              ),
-              ProfileMenuItem(
-                icon: LucideIcons.send,
-                label: 'Telegram orqali yordam',
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppButton(
+                  label: 'Ro\'yxatdan o\'tish',
+                  icon: LucideIcons.userPlus,
+                  variant: AppButtonVariant.secondary,
+                  isExpanded: true,
+                  onPressed: () => context.push('/register'),
+                ),
               ),
             ],
           ),
@@ -92,16 +151,98 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const ProfileMenuItem(
-            icon: LucideIcons.logOut,
-            label: 'Chiqish',
-            isDestructive: true,
-          ),
-          const SizedBox(height: 24),
-          const ProfileSupportCard(),
         ],
       ),
+    );
+  }
+}
+
+class _SignedInContent extends StatelessWidget {
+  const _SignedInContent({required this.user, required this.onLogout});
+
+  final AuthUser user;
+  final Future<void> Function() onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        ProfileHeaderCard(name: user.displayName, contact: user.contactLabel),
+        const SizedBox(height: 16),
+        _ActionButtonsRow(
+          onEdit: () => debugPrint('Edit profile'),
+          onPhoto: () => debugPrint('Change photo'),
+          onSettings: () => debugPrint('Settings'),
+        ),
+        const SizedBox(height: 24),
+        ProfileMenuGroup(
+          title: 'Asosiy',
+          items: <Widget>[
+            const ProfileMenuItem(
+              icon: LucideIcons.user,
+              label: 'Shaxsiy ma\'lumotlar',
+            ),
+            ProfileMenuItem(
+              icon: LucideIcons.megaphone,
+              label: 'Mening e\'lonlarim',
+              onTap: () => context.push('/my-listings'),
+            ),
+            ProfileMenuItem(
+              icon: LucideIcons.bookmark,
+              label: 'Saqlanganlar',
+              onTap: () => context.push('/saved'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ProfileMenuGroup(
+          title: 'Xabarlar va yordam',
+          items: <Widget>[
+            ProfileMenuItem(
+              icon: LucideIcons.messageSquare,
+              label: 'Admin xabarlari',
+              onTap: () => context.push('/admin-messages'),
+            ),
+            const ProfileMenuItem(
+              icon: LucideIcons.send,
+              label: 'Telegram orqali yordam',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ProfileMenuGroup(
+          title: 'Sozlamalar',
+          items: <Widget>[
+            const ProfileMenuItem(
+              icon: LucideIcons.globe,
+              label: 'Til',
+              trailingText: 'O\'zbekcha',
+            ),
+            ProfileMenuItem(
+              icon: LucideIcons.fileText,
+              label: 'Foydalanish shartlari',
+              onTap: () => context.push('/terms'),
+            ),
+            ProfileMenuItem(
+              icon: LucideIcons.shield,
+              label: 'Maxfiylik siyosati',
+              onTap: () => context.push('/privacy'),
+            ),
+            const ProfileMenuItem(
+              icon: LucideIcons.info,
+              label: 'Ilova versiyasi',
+              trailingText: 'v1.0.0',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ProfileMenuItem(
+          icon: LucideIcons.logOut,
+          label: 'Chiqish',
+          isDestructive: true,
+          onTap: () async => onLogout(),
+        ),
+      ],
     );
   }
 }
@@ -156,11 +297,7 @@ class _IconButton extends StatelessWidget {
 }
 
 class _ActionButtonsRow extends StatelessWidget {
-  const _ActionButtonsRow({
-    this.onEdit,
-    this.onPhoto,
-    this.onSettings,
-  });
+  const _ActionButtonsRow({this.onEdit, this.onPhoto, this.onSettings});
 
   final VoidCallback? onEdit;
   final VoidCallback? onPhoto;
@@ -199,11 +336,7 @@ class _ActionButtonsRow extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _ActionButton({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
